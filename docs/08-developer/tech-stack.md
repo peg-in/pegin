@@ -1,5 +1,5 @@
 # Moved
 
-**Spec 1** is now at [specs/tech-stack.md](specs/tech-stack.md).
+**Spec 1** is now at [../04-technical/specs/tech-stack.md](../04-technical/specs/tech-stack.md).
 
 Developer index: [README.md](README.md).

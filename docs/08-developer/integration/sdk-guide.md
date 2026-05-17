@@ -1,6 +1,6 @@
 # PEGIN SDK integration guide
 
-> **Developer hub:** [../README.md](../README.md) · **Spec 1:** [../specs/tech-stack.md](../specs/tech-stack.md) · **POC scope:** [../../03-use-cases/mvp-strategy.md](../../03-use-cases/mvp-strategy.md)
+> **Developer hub:** [../README.md](../README.md) · **Spec 1:** [../04-technical/specs/tech-stack.md](../../04-technical/specs/tech-stack.md) · **POC scope:** [../../03-use-cases/mvp-strategy.md](../../03-use-cases/mvp-strategy.md)
 
 ## The truth: login must be dead simple
 

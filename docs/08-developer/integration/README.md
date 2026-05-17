@@ -8,8 +8,8 @@ Integrate **Login with PEGIN** in your application.
 
 **Before integrating**
 
-1. [../specs/tech-stack.md](../specs/tech-stack.md) — dependencies and POC scope  
+1. [../04-technical/specs/tech-stack.md](../../04-technical/specs/tech-stack.md) — dependencies and POC scope  
 2. [../../03-use-cases/mvp-strategy.md](../../03-use-cases/mvp-strategy.md) — what ships in Phase 0  
-3. [../architecture/on-chain-architecture.md](../architecture/on-chain-architecture.md) — DID verification  
+3. [../../10-architecture/on-chain-architecture.md](../../10-architecture/on-chain-architecture.md) — DID verification  
 
 **Hub:** [../README.md](../README.md)

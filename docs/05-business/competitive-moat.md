@@ -60,7 +60,7 @@ PEGIN’s bet: some buyers care enough about **ownership, deployment model, and 
 | Weak claim | Why |
 |------------|-----|
 | “Secret technology” | WebAuthn, DID, Rue/DIG are learnable; execution and network matter more |
-| “More features than Entra” | Out of scope for v1 — see [enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md) |
+| “More features than Entra” | Out of scope for v1 — see [enterprise-identity-spec.md](../04-technical/specs/enterprise-identity-spec.md) |
 | “Proven cheaper” | Needs pilot TCO worksheets — see [sustainable-funding.md](sustainable-funding.md) |
 | “Audit lives on blockchain” | Audit on **DIG**; Chia anchors store updates only |
 
@@ -118,7 +118,7 @@ Member states may add **national** rules (e.g. Germany BSI IT-Grundschutz, secto
 |----------------------------|-------------------|-----------------|
 | Identity tied to US SaaS control plane | Entra / Okta hosted or operated under US corporate structure | **Open protocol**; operator or customer runs SSO in **EU jurisdiction** |
 | Permission + audit in vendor Postgres | M365 / Entra logs exportable but vendor-held | **Grants and audit on DIG** (EU peers); **store-update anchors** on Chia — see [fully-decentralized.md](../01-vision/fully-decentralized.md) |
-| Cannot exit without re-provisioning thousands of apps | Contractual lock-in | **OIDC/SAML** federation; parallel run then cutover ([enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md)) |
+| Cannot exit without re-provisioning thousands of apps | Contractual lock-in | **OIDC/SAML** federation; parallel run then cutover ([enterprise-identity-spec.md](../04-technical/specs/enterprise-identity-spec.md)) |
 | Removing M365 but still need SSO + access | Ad-hoc LDAP / on-prem AD remains | PEGIN SSO + PePP without restoring Citrix-style sprawl |
 
 **Positioning sentence (strategy only):** For sovereignty-minded EU organisations, PEGIN is a candidate **identity and permission layer** that can run on **EU infrastructure** they choose — complementary to open-source workplace projects (e.g. open mail, UCS/LDAP bridges), not a claim of automatic GDPR certification.

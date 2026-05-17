@@ -7,7 +7,11 @@
 
 | Role | Start here |
 |------|------------|
-| **Developers** | [08-developer/README.md](../08-developer/README.md) |
+| **Principles (anchor)** | [pegin-manifest.md](../01-vision/pegin-manifest.md) |
+| **How we work** | [09-how-we-work/README.md](../09-how-we-work/README.md) |
+| **Architecture** | [10-architecture/README.md](../10-architecture/README.md) |
+| **Specs** | [04-technical/specs/](../04-technical/specs/README.md) |
+| **Programmers** | [08-developer/README.md](../08-developer/README.md) |
 | **Docs hub** | [docs/README.md](../README.md) |
 | **POC scope** | [mvp-strategy.md](../03-use-cases/mvp-strategy.md) |
 | **Roadmap** | [roadmap.md](../03-use-cases/roadmap.md) |
@@ -79,6 +83,8 @@ The deeper innovation is **ownership**: employer grants *permission* to your DID
 
 ## 2. Core Philosophy
 
+> **Canonical anchor:** [pegin-manifest.md](../01-vision/pegin-manifest.md) — **trust is the staple** (foundation & company); layers E1–E11, P1–P14, W1–W11, B1–B6. The sections below are the narrative wiki; if anything conflicts, the manifest wins.
+
 ### Identity you own
 
 When you work at a company using Okta or Azure AD, the company owns your login. Every app you visit, every file you open, every login time and location is recorded by the company. When you leave, your account is deleted — and with it, any proof you worked there.
@@ -98,12 +104,11 @@ Your employer sees that you authenticated — not which URLs you visited, at wha
 
 PEGIN is not a company. It is a protocol — like DNS, SSL, or HTTP: foundational infrastructure that everyone uses, but no single entity controls.
 
-Design principles:
-- **No single point of failure** — everything runs on Chia blockchain; if PEGIN's servers go down, PEGIN works
-- **Immutable smart contracts** — deployed once on Chia, cannot be changed even by the founder
+Design principles (see [manifest P1–P6](../01-vision/pegin-manifest.md#layer-ii--pegin-product-principles)):
+- **No single point of failure** — protocol + DIG replication; operators and peers can keep serving without one company
+- **Anchors on Chia** — DIDs and store commitments; heavy data on DIG, not on chain
 - **Open-source code** — anyone can fork, audit, build alternative implementations
-- **No central API** — dApps and apps query blockchain directly or run their own indexer
-- **Minimal trust** — smart contracts verify credentials cryptographically; no central entity to trust
+- **Minimal mandatory trust** — verify cryptographically; choose your operator and peer set
 
 ### Survives its creator
 
@@ -984,15 +989,15 @@ Use **`docs/08-developer/`** for implementation truth. This wiki section is a su
 | Path | Document |
 |------|----------|
 | [08-developer/README.md](../08-developer/README.md) | Developer hub and build path |
-| [specs/tech-stack.md](../08-developer/specs/tech-stack.md) | **Spec 1** — stack, POC, official links |
-| [specs/enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md) | **Spec 2** — OIDC, SAML, SCIM, Entra |
+| [specs/tech-stack.md](../04-technical/specs/tech-stack.md) | **Spec 1** — stack, POC, official links |
+| [specs/enterprise-identity-spec.md](../04-technical/specs/enterprise-identity-spec.md) | **Spec 2** — OIDC, SAML, SCIM, Entra |
 | [integration/sdk-guide.md](../08-developer/integration/sdk-guide.md) | SDK and app integration |
-| [architecture/on-chain-architecture.md](../08-developer/architecture/on-chain-architecture.md) | On-chain model |
-| [architecture/dig-incentives-integration.md](../08-developer/architecture/dig-incentives-integration.md) | DIG incentives |
-| [architecture/dig-enterprise-transformation.md](../08-developer/architecture/dig-enterprise-transformation.md) | Enterprise + DIG |
-| [permissions/permission-data-model.md](../08-developer/permissions/permission-data-model.md) | PePP (Phase 2) |
-| [products/gateway-architecture.md](../08-developer/products/gateway-architecture.md) | Penguin Gateway |
-| [products/vault-architecture.md](../08-developer/products/vault-architecture.md) | Penguin Vault |
+| [architecture/on-chain-architecture.md](../10-architecture/on-chain-architecture.md) | On-chain model |
+| [architecture/dig-incentives-integration.md](../10-architecture/dig-incentives-integration.md) | DIG incentives |
+| [architecture/dig-enterprise-transformation.md](../10-architecture/dig-enterprise-transformation.md) | Enterprise + DIG |
+| [permissions/permission-data-model.md](../10-architecture/permission-data-model.md) | PePP (Phase 2) |
+| [products/gateway-architecture.md](../10-architecture/products/gateway-architecture.md) | Penguin Gateway |
+| [products/vault-architecture.md](../10-architecture/products/vault-architecture.md) | Penguin Vault |
 
 ---
 
@@ -1505,10 +1510,10 @@ KEY INSIGHT: You make money by SUCCEEDING, not by EXTRACTING.
 
 | Folder | Key files |
 |--------|-----------|
-| **08-developer/** | [README](../08-developer/README.md), [tech-stack](../08-developer/specs/tech-stack.md), [sdk-guide](../08-developer/integration/sdk-guide.md) |
+| **08-developer/** | [README](../08-developer/README.md), [tech-stack](../04-technical/specs/tech-stack.md), [sdk-guide](../08-developer/integration/sdk-guide.md) |
 | **03-use-cases/** | [roadmap](../03-use-cases/roadmap.md), [mvp-strategy](../03-use-cases/mvp-strategy.md), [differentiators](../03-use-cases/differentiators.md) |
 | **02-product/** | [permission-platform](../02-product/permission-platform.md), [complete-ecosystem](../02-product/complete-ecosystem.md) |
-| **01-vision/** | [fully-decentralized](../01-vision/fully-decentralized.md), [core-value](../01-vision/core-value-user-owned-login.md) |
+| **01-vision/** | [pegin-manifest](../01-vision/pegin-manifest.md), [fully-decentralized](../01-vision/fully-decentralized.md), [core-value](../01-vision/core-value-user-owned-login.md) |
 | **05-business/** | [competitive-moat](../05-business/competitive-moat.md), [enterprise-business-plan](../05-business/enterprise-business-plan.md), [sustainable-funding](../05-business/sustainable-funding.md) |
 | **06-strategy/** | [chia-ecosystem-position](../06-strategy/chia-ecosystem-position.md), [notbot-integration](../06-strategy/notbot-integration.md) |
 | **07-penguin-products/** | [gateway](../07-penguin-products/gateway-business-plan.md), [vault](../07-penguin-products/vault-business-plan.md) |

@@ -1,6 +1,6 @@
 # PEGIN on-chain architecture
 
-> **Developer hub:** [../README.md](../README.md) · **Spec 1:** [../specs/tech-stack.md](../specs/tech-stack.md)  
+> **Hub:** [README.md](README.md) · **Programmers:** [../08-developer/README.md](../08-developer/README.md) · **Spec 1:** [../04-technical/specs/tech-stack.md](../04-technical/specs/tech-stack.md)  
 > **Data plane:** DIDs and contracts on Chia; user data and audit on **DIG** (see [fully-decentralized.md](../../01-vision/fully-decentralized.md)).
 
 *Chia anchoring + verification — not “everything on chain.”*

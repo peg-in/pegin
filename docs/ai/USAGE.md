@@ -21,7 +21,7 @@ python3 scripts/generate-ai-knowledge-base.py
 ## Cursor / Claude Code
 
 1. **Always-on context:** `.cursor/rules/pegin-knowledge-base.mdc` points agents at canonical docs.  
-2. **@ mention files:** e.g. `@docs/08-developer/specs/tech-stack.md` for implementation work.  
+2. **@ mention files:** e.g. `@docs/04-technical/specs/tech-stack.md` for implementation work.  
 3. **Compact boot:** `@docs/ai/CONTEXT.md` when you need project facts without loading the full corpus.  
 4. **Repo guide:** root [`AGENTS.md`](../../AGENTS.md) links here.
 
@@ -30,7 +30,7 @@ python3 scripts/generate-ai-knowledge-base.py
 1. Load `docs/ai/chunks.jsonl` — one JSON object per line with `text`, `path`, `section`, `category`.  
 2. Embed the `text` field; store `id`, `path`, `document_id`, `section` as metadata.  
 3. Filter by `category` at query time if needed (`technical`, `business`, …).  
-4. Do **not** embed `wiki/PEGIN_Wiki.md` or `_archive/` (excluded by design).
+4. Do **not** embed `wiki/PEGIN_Wiki.md` (excluded by design — duplicates topic docs).
 
 Example (Python):
 
@@ -67,7 +67,6 @@ Expose `GET` manifest or stream `chunks.jsonl` from your doc server; filter `cat
 |-------|-----|
 | `PEGIN_Wiki_Knowledge_Base.html` | HTML/JS shell; poor chunking, no stable section IDs |
 | `wiki/PEGIN_Wiki.md` | 1,500+ line duplicate of all topic docs |
-| `wiki/_archive/` | Superseded navigation only |
 
 ## Chunking policy
 

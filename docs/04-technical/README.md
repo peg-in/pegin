@@ -1,11 +1,12 @@
-# Technical documentation (moved)
+# Technical specifications
 
-All technical documentation is under **[../08-developer/](../08-developer/README.md)**.
+**Spec 1** and **Spec 2** — what to build (stack, protocols, official links). Implementation structure and SDK live under [08-developer/](../08-developer/README.md). Work culture lives under [09-how-we-work/](../09-how-we-work/README.md).
 
-| Topic | Location |
-|-------|----------|
-| Developer index | [08-developer/README.md](../08-developer/README.md) |
-| Spec 1 | [08-developer/specs/tech-stack.md](../08-developer/specs/tech-stack.md) |
-| Spec 2 | [08-developer/specs/enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md) |
-| SDK | [08-developer/integration/sdk-guide.md](../08-developer/integration/sdk-guide.md) |
-| On-chain | [08-developer/architecture/on-chain-architecture.md](../08-developer/architecture/on-chain-architecture.md) |
+| Spec | Document | Scope |
+|------|----------|--------|
+| **Spec 1** | [specs/tech-stack.md](specs/tech-stack.md) | Chia, xch-dev, Rue, DIG, POC crates, checklist |
+| **Spec 2** | [specs/enterprise-identity-spec.md](specs/enterprise-identity-spec.md) | OIDC, SAML, SCIM, Entra; explicit v1 boundaries |
+
+**Index:** [specs/README.md](specs/README.md)
+
+**Developer hub (architecture, SDK, engineering):** [08-developer/README.md](../08-developer/README.md)

@@ -136,7 +136,7 @@ All user data and audit logs target DIG replication, not one private Postgres.
 2. **Anchor** — on store update, record commitment on Chia (Merkle root / hash of store head).
 3. **Verify** — auditor or SIEM exports from DIG and checks against anchored history.
 
-PePP grants and permission audit trails follow this pattern; see [permission-data-model.md](../08-developer/permissions/permission-data-model.md).
+PePP grants and permission audit trails follow this pattern; see [permission-data-model.md](../10-architecture/permission-data-model.md).
 
 ---
 

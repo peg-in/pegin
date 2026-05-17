@@ -1,27 +1,52 @@
 # PEGIN documentation
 
-PEGIN (Penguin Gateway Identity) is decentralized SSO on Chia + DIG. **If you build or integrate PEGIN, start with [08-developer/README.md](08-developer/README.md)** — that is the primary technical documentation.
+PEGIN (Penguin Gateway Identity) is decentralized SSO on Chia + DIG.
+
+| You are… | Start here |
+|----------|------------|
+| **Any team member** | [01-vision/pegin-manifest.md](01-vision/pegin-manifest.md) → [09-how-we-work/](09-how-we-work/README.md) → [10-architecture/](10-architecture/README.md) |
+| **Programmer** | Above, then [08-developer/](08-developer/README.md) + [04-technical/specs/](04-technical/specs/README.md) |
 
 ---
 
-## Primary: developer documentation
+## By folder
 
-| | |
-|---|---|
-| **Index** | **[08-developer/README.md](08-developer/README.md)** |
-| **Spec 1 (stack)** | [08-developer/specs/tech-stack.md](08-developer/specs/tech-stack.md) |
-| **Spec 2 (enterprise)** | [08-developer/specs/enterprise-identity-spec.md](08-developer/specs/enterprise-identity-spec.md) |
-| **SDK** | [08-developer/integration/sdk-guide.md](08-developer/integration/sdk-guide.md) |
-| **POC scope** | [03-use-cases/mvp-strategy.md](03-use-cases/mvp-strategy.md) |
+| Folder | Audience | Contents |
+|--------|----------|----------|
+| [01-vision/](01-vision/) | Everyone | Principles, manifest, decentralization story |
+| [09-how-we-work/](09-how-we-work/) | Everyone | Culture, GitHub, Basecamp (paid SaaS) |
+| [10-architecture/](10-architecture/) | Everyone | System design — Chia, DIG, PePP, products |
+| [02-product/](02-product/) | Product / GTM | PePP narrative, ecosystem |
+| [03-use-cases/](03-use-cases/) | Everyone | Roadmap, MVP, differentiators |
+| [04-technical/specs/](04-technical/specs/) | Engineers | Spec 1 & 2 (implementation contracts) |
+| [08-developer/](08-developer/) | **Programmers only** | `environment/`, `engineering/`, `integration/` |
+| [05-business/](05-business/) | Business | Plans, funding, moat |
+| [06-strategy/](06-strategy/) | Strategy | Ecosystem position |
+| [07-penguin-products/](07-penguin-products/) | Product | Future product business plans |
 
 ```
-08-developer/
-├── specs/ Spec 1 & 2
-├── architecture/ On-chain · DIG
-├── integration/ SDK
-├── permissions/ PePP (Phase 2)
-└── products/ Gateway & Vault (future)
+docs/
+├── 01-vision/          Why PEGIN
+├── 09-how-we-work/     How the team works (all roles)
+├── 10-architecture/    What we build (all roles)
+├── 04-technical/specs/ How to implement (engineers)
+├── 08-developer/       environment · engineering · integration
+├── 02-product/ 03-use-cases/ 05-business/ …
+└── wiki/  ai/
 ```
+
+---
+
+## Quick links
+
+| Goal | Document |
+|------|----------|
+| Principles anchor | [pegin-manifest.md](01-vision/pegin-manifest.md) |
+| How we work | [09-how-we-work/README.md](09-how-we-work/README.md) |
+| Project architecture | [10-architecture/README.md](10-architecture/README.md) |
+| Write code | [08-developer/README.md](08-developer/README.md) |
+| Spec 1 / Spec 2 | [04-technical/specs/](04-technical/specs/README.md) |
+| POC scope | [mvp-strategy.md](03-use-cases/mvp-strategy.md) |
 
 ---
 
@@ -29,117 +54,32 @@ PEGIN (Penguin Gateway Identity) is decentralized SSO on Chia + DIG. **If you bu
 
 | Resource | Use |
 |----------|-----|
-| [ai/CONTEXT.md](ai/CONTEXT.md) | Compact system context for LLMs |
-| [ai/manifest.json](ai/manifest.json) | Document catalog |
-| [ai/chunks.jsonl](ai/chunks.jsonl) | RAG chunks |
-| [../llms.txt](../llms.txt) | [llms.txt](https://llmstxt.org/) index |
+| [ai/CONTEXT.md](ai/CONTEXT.md) | Compact LLM context |
+| [../llms.txt](../llms.txt) | Doc index |
 
-Regenerate: `python3 scripts/generate-ai-knowledge-base.py`
-
-**Not for RAG:** HTML wiki, `wiki/PEGIN_Wiki.md`, `wiki/_archive/`, redirect stubs in `08-developer/` root.
-
----
-
-## Quick links
-
-| Goal | Start here |
-|------|------------|
-| **Build / integrate** | [08-developer/README.md](08-developer/README.md) |
-| POC scope | [03-use-cases/mvp-strategy.md](03-use-cases/mvp-strategy.md) |
-| Master roadmap | [03-use-cases/roadmap.md](03-use-cases/roadmap.md) |
-| Philosophy (15 min) | [01-vision/core-value-user-owned-login.md](01-vision/core-value-user-owned-login.md) |
-| Business / funding | [05-business/](05-business/) |
-| Browser wiki | [wiki/README.md](wiki/README.md) · [HTML](wiki/PEGIN_Wiki_Knowledge_Base.html) |
-
----
-
-## Folder map
-
-```
-docs/
-├── 08-developer/ ★ Primary — specs, architecture, SDK (start here)
-├── 03-use-cases/ Roadmap, MVP, differentiators
-├── 02-product/ Product narrative (PePP, ecosystem)
-├── 01-vision/ Philosophy and principles
-├── 05-business/ Business plans, funding
-├── 06-strategy/ Ecosystem positioning
-├── 07-penguin-products/ Future product business plans
-├── 00-getting-started/ Wiki hosting
-├── 04-technical/ Redirect → 08-developer
-├── ai/ RAG manifest and CONTEXT
-└── wiki/ HTML bundle
-```
-
----
-
-## 08 — Developer (canonical technical docs)
-
-Full index: **[08-developer/README.md](08-developer/README.md)**
-
-| Section | Key files |
-|---------|-----------|
-| [specs/](08-developer/specs/) | [tech-stack.md](08-developer/specs/tech-stack.md), [enterprise-identity-spec.md](08-developer/specs/enterprise-identity-spec.md) |
-| [architecture/](08-developer/architecture/) | [on-chain-architecture.md](08-developer/architecture/on-chain-architecture.md), DIG docs |
-| [integration/](08-developer/integration/) | [sdk-guide.md](08-developer/integration/sdk-guide.md) |
-| [permissions/](08-developer/permissions/) | [permission-data-model.md](08-developer/permissions/permission-data-model.md) |
-| [products/](08-developer/products/) | Gateway & Vault architecture |
-
----
-
-## 03 — Use cases & plan
-
-| Document | Description |
-|----------|-------------|
-| [roadmap.md](03-use-cases/roadmap.md) | Phases 0–4 |
-| [mvp-strategy.md](03-use-cases/mvp-strategy.md) | POC only |
-| [differentiators.md](03-use-cases/differentiators.md) | vs centralized SSO |
-
----
-
-## 02 — Product
-
-| Document | Description |
-|----------|-------------|
-| [complete-ecosystem.md](02-product/complete-ecosystem.md) | SSO + PePP overview |
-| [permission-platform.md](02-product/permission-platform.md) | PePP design (Phase 2) |
-
----
-
-## 01 — Vision
-
-| Document | Description |
-|----------|-------------|
-| [core-value-user-owned-login.md](01-vision/core-value-user-owned-login.md) | User-owned identity |
-| [business-principles.md](01-vision/business-principles.md) | Principles |
-| [fully-decentralized.md](01-vision/fully-decentralized.md) | Decentralization model |
-
----
-
-## 05 — Business · 06 — Strategy · 07 — Penguin
-
-See [05-business/business-plan.md](05-business/business-plan.md), [06-strategy/](06-strategy/), [07-penguin-products/](07-penguin-products/).
+Regenerate: `python3 scripts/generate-ai-knowledge-base.py` (when script exists)
 
 ---
 
 ## Reading paths
 
-### Engineer / builder (~2 hours)
+### Any team member (~45 min)
 
-1. **[08-developer/README.md](08-developer/README.md)**
-2. [mvp-strategy.md](03-use-cases/mvp-strategy.md)
-3. [specs/tech-stack.md](08-developer/specs/tech-stack.md)
-4. [integration/sdk-guide.md](08-developer/integration/sdk-guide.md)
+1. [pegin-manifest.md](01-vision/pegin-manifest.md)  
+2. [09-how-we-work/how-we-work.md](09-how-we-work/how-we-work.md)  
+3. [10-architecture/application-architecture.md](10-architecture/application-architecture.md) (overview)
 
-### Business leader (~1 hour)
+### Engineer (~2 hours)
 
-1. [core-value-user-owned-login.md](01-vision/core-value-user-owned-login.md)
-2. [business-principles.md](01-vision/business-principles.md)
-3. [sustainable-funding.md](05-business/sustainable-funding.md)
+1. Team path above  
+2. [08-developer/environment/developer-environment.md](08-developer/environment/developer-environment.md)  
+3. [04-technical/specs/tech-stack.md](04-technical/specs/tech-stack.md)  
+4. [08-developer/integration/sdk-guide.md](08-developer/integration/sdk-guide.md)
 
 ### Enterprise IT (~1.5 hours)
 
-1. [specs/enterprise-identity-spec.md](08-developer/specs/enterprise-identity-spec.md)
-2. [architecture/dig-enterprise-transformation.md](08-developer/architecture/dig-enterprise-transformation.md)
+1. [04-technical/specs/enterprise-identity-spec.md](04-technical/specs/enterprise-identity-spec.md)  
+2. [10-architecture/dig-enterprise-transformation.md](10-architecture/dig-enterprise-transformation.md)  
 3. [permission-platform.md](02-product/permission-platform.md)
 
 ---
@@ -148,7 +88,7 @@ See [05-business/business-plan.md](05-business/business-plan.md), [06-strategy/]
 
 | Topic | Status |
 |-------|--------|
-| **Build** | [08-developer/](08-developer/) + repo [README](../README.md) |
-| **POC** | Login with PEGIN — [mvp-strategy.md](03-use-cases/mvp-strategy.md) |
-| **Roadmap** | [roadmap.md](03-use-cases/roadmap.md) |
-| **Claims** | |
+| **Culture** | [09-how-we-work/](09-how-we-work/) |
+| **Architecture** | [10-architecture/](10-architecture/) |
+| **Code** | [08-developer/](08-developer/) + [04-technical/specs/](04-technical/specs/) |
+| **POC** | [mvp-strategy.md](03-use-cases/mvp-strategy.md) |

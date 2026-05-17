@@ -5,7 +5,7 @@ Enterprise-grade decentralized SSO — **planning doc**. Competes with Azure AD 
 | | |
 |---|---|
 | **Audience** | Regulated industries, EU sovereignty buyers, Fortune-scale IT |
-| **Technical spec** | [enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md) |
+| **Technical spec** | [enterprise-identity-spec.md](../04-technical/specs/enterprise-identity-spec.md) |
 | **EU / sovereignty** | [competitive-moat.md § European data sovereignty](competitive-moat.md#european-data-sovereignty-and-regulation-opportunity) |
 | **Revenue hypotheses** | [sustainable-funding.md](sustainable-funding.md) |
 | **Vault (later)** | [vault-business-plan.md](../07-penguin-products/vault-business-plan.md) |
@@ -210,7 +210,7 @@ No per-seat license on core protocol by default. Details: [sustainable-funding.m
 
 | Document | Why |
 |----------|-----|
-| [enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md) | Protocol scope |
+| [enterprise-identity-spec.md](../04-technical/specs/enterprise-identity-spec.md) | Protocol scope |
 | [competitive-moat.md](competitive-moat.md) | Positioning + EU regulation |
 | [sustainable-funding.md](sustainable-funding.md) | Revenue hypotheses |
 | [permission-platform.md](../02-product/permission-platform.md) | PePP / Citrix gap |

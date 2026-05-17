@@ -10,7 +10,7 @@
 |---|---|
 | **Status** | Planning / future — after PEGIN SSO core and optional PePP |
 | **Depends on** | [Login with PEGIN](../../03-use-cases/mvp-strategy.md), stable DID + contracts |
-| **Technical reference** | [vault-architecture.md](../../08-developer/products/vault-architecture.md) |
+| **Technical reference** | [vault-architecture.md](../../10-architecture/products/vault-architecture.md) |
 | **PEGIN core business model** | [business-plan.md](../../05-business/business-plan.md) · [sustainable-funding.md](../../05-business/sustainable-funding.md) |
 | **Sibling product** | [gateway-business-plan.md](gateway-business-plan.md) (SSO access layer) |
 
@@ -91,8 +91,8 @@ Engineering detail lives in the architecture doc; this plan states **business bo
 
 | Topic | Document |
 |-------|----------|
-| Vault technical design | [vault-architecture.md](../../08-developer/products/vault-architecture.md) |
-| PEGIN stack & contracts | [tech-stack.md](../../08-developer/specs/tech-stack.md) |
+| Vault technical design | [vault-architecture.md](../../10-architecture/products/vault-architecture.md) |
+| PEGIN stack & contracts | [tech-stack.md](../../04-technical/specs/tech-stack.md) |
 | When Vault ships | [roadmap.md](../../03-use-cases/roadmap.md) — Phase 4+ future products |
 | SSO sibling (Gateway) | [gateway-business-plan.md](gateway-business-plan.md) |
 
@@ -204,7 +204,7 @@ Phases are **qualitative**; timing follows PEGIN core + roadmap Phase 4.
 
 | Document | Why |
 |----------|-----|
-| [vault-architecture.md](../../08-developer/products/vault-architecture.md) | Technical architecture |
+| [vault-architecture.md](../../10-architecture/products/vault-architecture.md) | Technical architecture |
 | [gateway-business-plan.md](gateway-business-plan.md) | SSO layer (often integrated first) |
 | [business-plan.md](../../05-business/business-plan.md) | PEGIN protocol business model |
 | [roadmap.md](../../03-use-cases/roadmap.md) | When Vault ships |

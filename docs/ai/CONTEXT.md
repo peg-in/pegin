@@ -4,6 +4,8 @@ Use this file as a system prompt or project context when the full knowledge base
 
 **Evidence policy:** Pre-POC. Do not state dollar savings, adoption %, or customer names as facts unless backed by a dated pilot or contract.
 
+**Principles anchor:** `docs/01-vision/pegin-manifest.md` — **trust is the staple**; foundation & company **mottos** (meeting-free, library days, no drama); E1–E11, P1–P14, W1–W11, B1–B6.
+
 ## What PEGIN is
 
 **PEGIN** (Penguin Gateway Identity) is a fully decentralized SSO on the **Chia blockchain** and **DIG Network**. Users authenticate with **passkeys** (WebAuthn); identity is anchored to a **Chia DID**; apps receive a signed **JWT**.
@@ -35,12 +37,15 @@ User (passkey) → PEGIN Service (Rust) → Chia DID + Rue contracts
  Chia anchors store updates only — no heavy audit payloads on chain
 ```
 
+**Code structure:** Fowler layers + DDD crates — `docs/10-architecture/application-architecture.md`.  
+**Quality:** Pragmatic Clean Code + rustfmt/clippy — `docs/08-developer/engineering/linting-and-formatting.md`. TDD not required; test harness early — `docs/08-developer/engineering/test-architecture.md`. **Culture:** remote, library days — `docs/09-how-we-work/how-we-work.md`. **Paid SaaS:** GitHub + Basecamp only; OSS stack; hosting Hetzner (early) → DIG; dev setup (Podman/Docker planned when code lands) — `docs/08-developer/environment/`. **AI (optional):** local agents for sensitive work; cloud IDE allowed with privacy rules — `docs/08-developer/environment/ai-coding-tools.md`.
+
 **Identity model:** User owns DID; employer grants revocable **permissions** (PePP, not in POC). **Audit:** append on DIG; on-chain = store commitment when DIG updates.
 
 ## Product surface
 
 1. **SSO engine** — passkey login, OIDC/SAML federation (phased) 
-2. **Permission platform (PePP)** — Phase 2; see `docs/08-developer/permissions/permission-data-model.md` 
+2. **Permission platform (PePP)** — Phase 2; see `docs/10-architecture/permission-data-model.md` 
 3. **Penguin Gateway / Vault** — future; `07-penguin-products/`
 
 ## Business model (hypothesis)
@@ -56,11 +61,14 @@ Complementary to **Chia Network Inc.** Uses xch-dev toolchain (`chia-wallet-sdk`
 
 | Topic | Path |
 |-------|------|
-| **Developer docs (primary)** | `docs/08-developer/README.md` |
-| Tech stack (Spec 1) | `docs/08-developer/specs/tech-stack.md` |
+| **Docs hub** | `docs/README.md` |
+| **How we work (all roles)** | `docs/09-how-we-work/README.md` |
+| **Architecture (all roles)** | `docs/10-architecture/README.md` |
+| **Programmer docs** | `docs/08-developer/README.md` |
+| Tech stack (Spec 1) | `docs/04-technical/specs/tech-stack.md` |
 | SDK guide | `docs/08-developer/integration/sdk-guide.md` |
-| On-chain architecture | `docs/08-developer/architecture/on-chain-architecture.md` |
-| Enterprise SSO (Spec 2) | `docs/08-developer/specs/enterprise-identity-spec.md` |
+| On-chain architecture | `docs/10-architecture/on-chain-architecture.md` |
+| Enterprise SSO (Spec 2) | `docs/04-technical/specs/enterprise-identity-spec.md` |
 | Roadmap | `docs/03-use-cases/roadmap.md` |
 | POC | `docs/03-use-cases/mvp-strategy.md` |
 | xch-dev | https://github.com/xch-dev · https://docs.xch.dev |
@@ -71,7 +79,6 @@ Complementary to **Chia Network Inc.** Uses xch-dev toolchain (`chia-wallet-sdk`
 
 - `docs/wiki/PEGIN_Wiki_Knowledge_Base.html` 
 - `docs/wiki/PEGIN_Wiki.md` (duplicate; may contain outdated ROI figures) 
-- `docs/wiki/_archive/`
 
 ## Glossary
 

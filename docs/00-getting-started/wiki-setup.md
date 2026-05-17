@@ -156,8 +156,8 @@ cp PEGIN_*.md docs/
 # Copy HTML wiki to root
 cp PEGIN_Wiki_Knowledge_Base.html ./
 
-# Copy README
-cp PEGIN_Wiki_README.md README.md
+# Copy wiki index (if publishing a standalone wiki repo)
+cp docs/wiki/README.md README.md
 ```
 
 #### Step 4: Commit & Push

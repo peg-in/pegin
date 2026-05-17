@@ -1,13 +1,10 @@
-# Architecture
+# Moved
 
-System design for identity on **Chia** and data on **DIG**.
+Project architecture is now under **[10-architecture/](../../10-architecture/README.md)**.
 
-| Document | Topics |
-|----------|--------|
-| [on-chain-architecture.md](on-chain-architecture.md) | DIDs, credential NFTs, Rue contracts, verification |
-| [dig-incentives-integration.md](dig-incentives-integration.md) | DIG peers, storage proofs, operator economics |
-| [dig-enterprise-transformation.md](dig-enterprise-transformation.md) | Enterprise apps using DIG instead of central DBs |
-
-**Prerequisite:** [../specs/tech-stack.md](../specs/tech-stack.md) · **Hub:** [../README.md](../README.md)
-
-**Product context:** [fully-decentralized.md](../../01-vision/fully-decentralized.md)
+| Document | Location |
+|----------|----------|
+| Application structure | [application-architecture.md](../../10-architecture/application-architecture.md) |
+| On-chain | [on-chain-architecture.md](../../10-architecture/on-chain-architecture.md) |
+| DIG enterprise | [dig-enterprise-transformation.md](../../10-architecture/dig-enterprise-transformation.md) |
+| DIG incentives | [dig-incentives-integration.md](../../10-architecture/dig-incentives-integration.md) |

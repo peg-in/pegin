@@ -128,7 +128,7 @@ PePP does not pretend a user on VPN is trusted everywhere. It makes **each app**
 | Concern | Legacy stack | PePP + PEGIN direction |
 |---------|--------------|-------------------------|
 | **Who is this person?** | AD password / Citrix login | PEGIN passkey + DID ([SSO POC](../03-use-cases/mvp-strategy.md)) |
-| **What may they do?** | AD groups → Citrix publish rules | PePP grants on DIG ([data model](../08-developer/permissions/permission-data-model.md)) |
+| **What may they do?** | AD groups → Citrix publish rules | PePP grants on DIG ([data model](../10-architecture/permission-data-model.md)) |
 | **How do they reach the app?** | VPN or Citrix session to internal IP | **App gateway** — HTTPS to only authorized backends |
 | **Legacy RDP / thick client** | Citrix VDI | Narrow **TCP bridge** only where required (Phase 2/3; not VDI-by-default) |
 
@@ -179,7 +179,7 @@ Compared to Citrix + VPN:
 | Ops | Farms, images, ADC | Gateway config + app schemas |
 | Employee UX | “Open Receiver, wait, click icon” | “Login with PEGIN” → app opens |
 
-Technical companion: [gateway-architecture.md](../08-developer/products/gateway-architecture.md) (SSO edge); PePP defines **what** the gateway may forward.
+Technical companion: [gateway-architecture.md](../10-architecture/products/gateway-architecture.md) (SSO edge); PePP defines **what** the gateway may forward.
 
 ### What you can turn off over time
 
@@ -229,7 +229,7 @@ Technical companion: [gateway-architecture.md](../08-developer/products/gateway-
 
 **Auditability** means: events are **appended to DIG audit stores** (signed, replicated). When the store head changes, an **on-chain anchor** records that update so tampering with history requires breaking both DIG replication and the chain commitment. Auditors export from DIG (or SIEM); they verify integrity against the anchor.
 
-See [permission-data-model.md](../08-developer/permissions/permission-data-model.md) and [fully-decentralized.md §2](../01-vision/fully-decentralized.md).
+See [permission-data-model.md](../10-architecture/permission-data-model.md) and [fully-decentralized.md §2](../01-vision/fully-decentralized.md).
 
 ### Architecture (simple and fast)
 
@@ -580,4 +580,4 @@ PEGIN core is **open source**; PePP may use flat SLA / services / DIG-related fe
 | **Audit** | Events on DIG; Chia records store-update commitments only |
 | **Evidence** | Per-pilot TCO and time-to-grant/revoke before enterprise claims |
 
-Data model: [permission-data-model.md](../08-developer/permissions/permission-data-model.md). SSO edge: [gateway-architecture.md](../08-developer/products/gateway-architecture.md).
+Data model: [permission-data-model.md](../10-architecture/permission-data-model.md). SSO edge: [gateway-architecture.md](../10-architecture/products/gateway-architecture.md).

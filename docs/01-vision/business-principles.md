@@ -1,4 +1,6 @@
-# 🐧 PEGIN — Timeless Business Principles & Customer Value Proposition
+# PEGIN — Timeless business principles & customer value
+
+> **Anchor document:** [pegin-manifest.md](pegin-manifest.md) — Layers I–IV (evergreen customer, PEGIN product, how we work, how we build). This file is the **long-form** business narrative; if anything conflicts, the manifest wins.
 
 ## How PEGIN aims to self-fund and enable founder transition
 

@@ -4,18 +4,16 @@ Fully decentralized SSO on **Chia** + **DIG Network**. Passkey login anchored to
 
 ---
 
-## Developer documentation (start here)
+## Documentation
 
-**[docs/08-developer/README.md](docs/08-developer/README.md)** — primary specs, architecture, and integration guides.
+**[docs/README.md](docs/README.md)** — full map by role.
 
-| Step | Document |
-|------|----------|
-| 1 | [Spec 1 — tech stack](docs/08-developer/specs/tech-stack.md) |
-| 2 | [SDK integration](docs/08-developer/integration/sdk-guide.md) |
-| 3 | [On-chain architecture](docs/08-developer/architecture/on-chain-architecture.md) |
-| POC scope | [mvp-strategy.md](docs/03-use-cases/mvp-strategy.md) |
+| Role | Start here |
+|------|------------|
+| **Everyone** | [Manifest](docs/01-vision/pegin-manifest.md) → [How we work](docs/09-how-we-work/README.md) → [Architecture](docs/10-architecture/README.md) |
+| **Programmers** | Then [08-developer/](docs/08-developer/README.md) + [Spec 1](docs/04-technical/specs/tech-stack.md) |
 
-Also: [CLAUDE.md](CLAUDE.md) · [docs/README.md](docs/README.md) · [llms.txt](llms.txt) · [docs/ai/CONTEXT.md](docs/ai/CONTEXT.md)
+Also: [CLAUDE.md](CLAUDE.md) · [llms.txt](llms.txt)
 
 ---
 
@@ -46,10 +44,12 @@ User (passkey) → PEGIN Service (Rust/Axum) → Chia DID + DIG → JWT to app
 
 | Folder | Role |
 |--------|------|
-| **[docs/08-developer/](docs/08-developer/)** | **Primary** — build & integrate |
+| [docs/01-vision/pegin-manifest.md](docs/01-vision/pegin-manifest.md) | Principles anchor |
+| [docs/09-how-we-work/](docs/09-how-we-work/) | Team culture & tools (all roles) |
+| [docs/10-architecture/](docs/10-architecture/) | System design (all roles) |
+| [docs/08-developer/](docs/08-developer/) | Code, SDK, tests (programmers) |
+| [docs/04-technical/specs/](docs/04-technical/specs/) | Spec 1 & 2 |
 | [docs/03-use-cases/](docs/03-use-cases/) | Roadmap, MVP |
-| [docs/02-product/](docs/02-product/) | Product narrative |
-| [docs/01-vision/](docs/01-vision/) | Philosophy |
 | [docs/05-business/](docs/05-business/) | Business plans |
 
 Built with 🐧 — *Waddle in, authenticated out.*

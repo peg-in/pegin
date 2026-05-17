@@ -62,9 +62,9 @@ Product and engineering scope live in dedicated docs; this plan only states **bu
 |-------|----------|
 | POC scope | [mvp-strategy.md](../03-use-cases/mvp-strategy.md) |
 | Phased delivery | [roadmap.md](../03-use-cases/roadmap.md) |
-| Tech stack & repos | [tech-stack.md](../08-developer/specs/tech-stack.md) |
-| On-chain design | [on-chain-architecture.md](../08-developer/architecture/on-chain-architecture.md) |
-| Enterprise protocols (SAML/OIDC/SCIM; not full AD DS in v1) | [enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md) |
+| Tech stack & repos | [tech-stack.md](../04-technical/specs/tech-stack.md) |
+| On-chain design | [on-chain-architecture.md](../10-architecture/on-chain-architecture.md) |
+| Enterprise protocols (SAML/OIDC/SCIM; not full AD DS in v1) | [enterprise-identity-spec.md](../04-technical/specs/enterprise-identity-spec.md) |
 | SDK / “Login with PEGIN” | [sdk-guide.md](../08-developer/integration/sdk-guide.md) |
 
 **Explicitly out of scope for early phases:** Production SLA billing, SCIM at scale, full PePP, and dollar-based ROI claims—see roadmap Phase 0–1.
@@ -113,7 +113,7 @@ Full detail and status table: [sustainable-funding.md](sustainable-funding.md).
 | **Credential** | KYC, education, employment, etc.; issuer-signed; revocable on-chain |
 | **Issuer** | Registers an organization; controls issuance and revocation for its credentials |
 
-Technical mapping: [on-chain-architecture.md](../08-developer/architecture/on-chain-architecture.md).
+Technical mapping: [on-chain-architecture.md](../10-architecture/on-chain-architecture.md).
 
 ### 5.2 Issuer workflow (target)
 
@@ -208,7 +208,7 @@ Record results in when available.
 |------|------------|
 | Chia/DIG adoption and fee UX | Testnet POC; clear fee disclosure in UX |
 | Regulatory (tokens, KYC credentials) | Legal review before token events; issuer responsibility model |
-| Enterprise expectation mismatch | [enterprise-identity-spec.md](../08-developer/specs/enterprise-identity-spec.md) — app SSO vs AD DS |
+| Enterprise expectation mismatch | [enterprise-identity-spec.md](../04-technical/specs/enterprise-identity-spec.md) — app SSO vs AD DS |
 | Unproven revenue streams | Pilot one stream at a time; document what customers actually pay for |
 | Smart contract bugs | Rue tests, simulator, external audit before mainnet |
 

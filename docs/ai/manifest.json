@@ -29,10 +29,9 @@
       "08-developer/sdk-guide.md",
       "08-developer/tech-stack.md",
       "ai",
-      "wiki/PEGIN_Wiki.md",
-      "wiki/_archive"
+      "wiki/PEGIN_Wiki.md"
     ],
-    "reason": "Navigation, HTML-only, consolidated duplicate, or archived content."
+    "reason": "Navigation, HTML-only, or consolidated duplicate content."
   },
   "document_count": 33,
   "chunk_count": 256,
@@ -382,7 +381,7 @@
       "id": "wiki.README",
       "path": "docs/wiki/README.md",
       "title": "PEGIN wiki",
-      "summary": "**Archive:** [_archive/](_archive/) — superseded indexes; do not use as entry points.",
+      "summary": "Wiki formats (HTML + consolidated markdown) with links to canonical docs under docs/.",
       "category": "wiki",
       "category_order": 9,
       "word_count": 76,

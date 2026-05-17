@@ -7,6 +7,6 @@
 | **Build / integrate** | [../08-developer/README.md](../08-developer/README.md) | **Primary technical docs** |
 | **Docs hub** | [../README.md](../README.md) | Folder map and reading paths |
 
-**Archive:** [_archive/](_archive/) — superseded indexes; do not use as entry points.
+Use topic markdown under `docs/` for canonical content; this folder is the wiki UI and overview only.
 
 **Regenerate AI chunks after doc moves:** `python3 scripts/generate-ai-knowledge-base.py`

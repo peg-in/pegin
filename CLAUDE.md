@@ -6,20 +6,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PEGIN (Penguin Gateway Identity) is a fully decentralized SSO built on the Chia blockchain + DIG Network. The POC delivers a single feature: **"Login with PEGIN"** — passkey (biometric) authentication anchored to a Chia DID, issuing a signed JWT. No passwords, no seed phrases, no central server.
 
-**Documentation:** [docs/08-developer/README.md](docs/08-developer/README.md) (primary) · [docs/README.md](docs/README.md). **Specs:** [Spec 1](docs/08-developer/specs/tech-stack.md) · [Spec 2](docs/08-developer/specs/enterprise-identity-spec.md). **Ecosystem:** [xch-dev](https://github.com/xch-dev), [docs.xch.dev](https://docs.xch.dev), [Yakuhito/slot-machine](https://github.com/Yakuhito/slot-machine), [XCHandles docs](https://docs.xchandles.com). **AI/RAG:** [llms.txt](llms.txt), [docs/ai/CONTEXT.md](docs/ai/CONTEXT.md) — regenerate with `python3 scripts/generate-ai-knowledge-base.py`.
+**Principles anchor:** `docs/01-vision/pegin-manifest.md` (evergreen customer + product + how we work + how we build).
+
+**Team:** `docs/09-how-we-work/` · **Architecture:** `docs/10-architecture/` · **Programmers:** `docs/08-developer/` (`environment/`, `engineering/`, `integration/`).
+
+**Documentation:** [docs/README.md](docs/README.md) · [docs/08-developer/README.md](docs/08-developer/README.md) (code only) · [docs/README.md](docs/README.md). **Specs:** [Spec 1](docs/04-technical/specs/tech-stack.md) · [Spec 2](docs/04-technical/specs/enterprise-identity-spec.md). **Ecosystem:** [xch-dev](https://github.com/xch-dev), [docs.xch.dev](https://docs.xch.dev), [Yakuhito/slot-machine](https://github.com/Yakuhito/slot-machine), [XCHandles docs](https://docs.xchandles.com). **AI/RAG:** [llms.txt](llms.txt), [docs/ai/CONTEXT.md](docs/ai/CONTEXT.md) — regenerate with `python3 scripts/generate-ai-knowledge-base.py`.
 
 ## Planned Workspace Structure
 
+Modular Rust workspace (Fowler layering + DDD bounded contexts). **Full layout:** [docs/10-architecture/application-architecture.md](docs/10-architecture/application-architecture.md).
+
 ```
-pegin-core/         # Rust: DID creation, WebAuthn registration/login, JWT issuance
-pegin-protocols/    # Rust: OIDC, SAML 2.0, OAuth 2.0, SCIM server
-pegin-contracts/    # Rue smart contracts: DID, credential NFT, recovery, revocation
-pegin-cli/          # Rust: developer CLI
-@pegin/sdk/         # TypeScript: "Login with PEGIN" button + browser WebAuthn
-pegin-dashboard/    # TypeScript: React + Shadcn UI admin dashboard
+pegin-domain/           # shared types, errors
+pegin-identity/         # DID, passkey (domain + ports)
+pegin-auth/             # sessions, JWT use cases
+pegin-authorization/    # PePP grants (Phase 2)
+pegin-audit/            # DIG append + Chia anchors
+pegin-infrastructure/   # Chia/DIG/SQL Data Mappers (no Active Record on core)
+pegin-api/              # Axum presentation
+pegin-protocols/        # OIDC, SAML, OAuth, SCIM
+pegin-contracts/        # Rue smart contracts
+pegin-cli/              # developer CLI
+packages/sdk/           # TypeScript WebAuthn + JWT
+pegin-dashboard/        # React + Shadcn (Tauri v2 like Sage)
 ```
 
-The workspace follows the same pattern as the [Sage wallet](https://github.com/xch-dev/sage): Rust backend + React frontend bridged via Tauri v2 for the desktop app.
+**Persistence:** domain on DIG + Chia anchors; optional **SQL** (sqlx + Data Mapper) for operator/OIDC cache only.
 
 ## Tech Stack Decisions
 

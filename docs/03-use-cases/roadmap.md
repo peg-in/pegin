@@ -54,7 +54,7 @@ Depends on: stable DID login + DIG read/write path.
 
 | Capability | Notes |
 |------------|--------|
-| Permission schema on DIG | See [permission-data-model.md](../08-developer/permissions/permission-data-model.md) |
+| Permission schema on DIG | See [permission-data-model.md](../10-architecture/permission-data-model.md) |
 | Manager approve flow | Target: much faster than typical ticket + AD sync — **measure in pilots** |
 | Time-bound grants | Auto-expire |
 | Revocation | Update DIG record; apps re-query |

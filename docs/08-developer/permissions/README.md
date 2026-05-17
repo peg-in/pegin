@@ -1,9 +1,5 @@
-# Permissions (PePP)
+# Moved
 
-**Phase 2** — not part of the SSO POC.
+PePP data model: [../../10-architecture/permission-data-model.md](../../10-architecture/permission-data-model.md)
 
-| Document | Contents |
-|----------|----------|
-| [permission-data-model.md](permission-data-model.md) | Grant JSON on DIG, audit append, on-chain store anchors |
-
-**Product:** [permission-platform.md](../../02-product/permission-platform.md) · **Roadmap:** [roadmap.md](../../03-use-cases/roadmap.md) Phase 2 · **Hub:** [../README.md](../README.md)
+Architecture hub: [../../10-architecture/README.md](../../10-architecture/README.md).

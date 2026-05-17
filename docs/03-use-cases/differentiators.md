@@ -33,7 +33,7 @@ Open source + on-chain anchor: operations can continue if PEGIN Inc. stops; cust
 
 ## Differentiator 5 — App-defined permissions (with PePP)
 
-Apps publish permission vocabularies; grants are stored for fast lookup (see [permission-data-model.md](../08-developer/permissions/permission-data-model.md)). Central IdPs often own the permission model inside their product — PEGIN aims for app-owned schemas on shared storage.
+Apps publish permission vocabularies; grants are stored for fast lookup (see [permission-data-model.md](../10-architecture/permission-data-model.md)). Central IdPs often own the permission model inside their product — PEGIN aims for app-owned schemas on shared storage.
 
 ---
 
