@@ -1,0 +1,80 @@
+# PEGIN — Penguin Gateway Identity
+
+> Fully decentralized SSO on Chia + DIG Network. Passkey login anchored to a Chia DID.
+> AI/RAG: use docs/ai/chunks.jsonl and docs/ai/CONTEXT.md. Do not ingest HTML wiki or wiki/PEGIN_Wiki.md.
+
+## AI entry points
+
+- [System context](docs/ai/CONTEXT.md): compact facts for agents
+- [Manifest](docs/ai/manifest.json): 33 documents, 256 RAG chunks
+- [Usage guide](docs/ai/USAGE.md): Cursor, RAG pipelines, Claude Projects
+- [Doc index](docs/README.md): human navigation
+- [AGENTS.md](AGENTS.md): coding agent conventions
+
+## Canonical documentation
+
+### Developer documentation (primary)
+
+- [PEGIN developer documentation](docs/08-developer/README.md): **Start here if you build or integrate PEGIN.** Specs, architecture, SDK, and protocol reference live in this folder....
+- [Architecture](docs/08-developer/architecture/README.md): System design for identity on **Chia** and data on **DIG**.
+- [PEGIN + DIG Network: Enterprise Application Architecture Transformation](docs/08-developer/architecture/dig-enterprise-transformation.md): > **The Insight:** PEGIN (authentication + permissions) + DIG Network (data) solve the infrastructure layer entirely....
+- [DIG Network Incentives + PEGIN DSSO Integration](docs/08-developer/architecture/dig-incentives-integration.md): > **Direction:** DIG stores PEGIN identity data; peers may earn network incentives (e.g. XCH) for storage and proofs....
+- [PEGIN On-Chain Architecture](docs/08-developer/architecture/on-chain-architecture.md): *Technical architecture — blockchain-only design (Chia + optional DIG)*
+- [Integration](docs/08-developer/integration/README.md): Integrate **Login with PEGIN** in your application.
+- [PEGIN SDK integration guide](docs/08-developer/integration/sdk-guide.md): > **Developer hub:** [../README.md](../README.md) · **Spec 1:** [../specs/tech-stack.md](../specs/tech-stack.md) · **...
+- [Permissions (PePP)](docs/08-developer/permissions/README.md): **Phase 2** — not part of the SSO POC.
+- [Permission data model (PePP)](docs/08-developer/permissions/permission-data-model.md): Technical reference for Phase 2. Not implemented in POC.
+- [Future products (Penguin)](docs/08-developer/products/README.md): Technical designs after PEGIN core SSO. See [roadmap.md](../../03-use-cases/roadmap.md) Phase 4+.
+- [Pengin Gateway — Technical Architecture](docs/08-developer/products/gateway-architecture.md): _Decentralized SSO on Chia + DIG_
+- [Penguin Vault — Technical Architecture](docs/08-developer/products/vault-architecture.md): *Implementation guide — Chia + DIG*
+- [Specifications](docs/08-developer/specs/README.md): Implementation specs for PEGIN engineers. Read **Spec 1** before writing code; read **Spec 2** before enterprise prot...
+- [Spec 2 — Enterprise identity (AD / Entra parity)](docs/08-developer/specs/enterprise-identity-spec.md): > **Goal:** PEGIN as a decentralized IdP that can **federate with** or **replace** Microsoft Entra ID (Azure AD) for ...
+- [Spec 1 — PEGIN technical stack (Chia + POC)](docs/08-developer/specs/tech-stack.md): > **PEGIN** = **P**enguin **G**ateway **I**de**n**tity — decentralized SSO on Chia + DIG.
+
+### Use cases & roadmap
+
+- [Structural differentiators vs centralized SSO](docs/03-use-cases/differentiators.md): > **Purpose:** Explain what a user-owned DID enables that traditional IdPs are not designed to do.
+- [POC & MVP — Login with PEGIN](docs/03-use-cases/mvp-strategy.md): User → "Login with PEGIN" → passkey (WebAuthn) → Chia DID verified → JWT → app
+- [PEGIN product roadmap](docs/03-use-cases/roadmap.md): > Single plan for what we build, in what order, and what is explicitly **future**. Timelines are planning estimates u...
+
+### Product
+
+- [PEGIN Complete Ecosystem — SSO + Permission Management](docs/02-product/complete-ecosystem.md): PEGIN combines **passwordless SSO** (user-held DID) with a planned **permission layer (PePP)** on DIG. This doc descr...
+- [PEGIN Permission Platform (PePP) — Decentralized Access Control](docs/02-product/permission-platform.md): > **Phase:** [Phase 2 in roadmap](../03-use-cases/roadmap.md) — not part of POC.
+
+### Vision
+
+- [PEGIN — Timeless Business Principles & Customer Value Proposition](docs/01-vision/business-principles.md): These principles transcend technology trends, market cycles, and management fads. They work because they align incent...
+- [PEGIN's Core Value: Your Login Belongs To You, Not Your Company](docs/01-vision/core-value-user-owned-login.md): > **The Core Truth:** Your login should belong to YOU, not your employer. PEGIN makes this real.
+- [PEGIN — Fully Decentralized](docs/01-vision/fully-decentralized.md): *Enterprise SSO + custody on Chia and DIG (no central servers)*
+
+### Business
+
+- [PEGIN Business Plan](docs/05-business/business-plan.md): **PEGIN** (Penguin Gateway Identity) is decentralized single sign-on on Chia + optional DIG storage: passkey login an...
+- [PEGIN competitive positioning](docs/05-business/competitive-moat.md): PEGIN does not win by quoting a lower **per-seat price** than Okta or Entra before anyone has run a pilot. It wins — ...
+- [PEGIN Enterprise Business Plan](docs/05-business/enterprise-business-plan.md): Enterprise-grade decentralized SSO — **planning doc**. Competes with Azure AD / Okta at the **app SSO layer** (SAML/O...
+- [PEGIN sustainable funding model](docs/05-business/sustainable-funding.md): PEGIN targets **open-source core** (no per-seat license as the default story) and revenue from **infrastructure, serv...
+
+### Strategy
+
+- [PEGIN Strategic Positioning: Additive to Chia Network, Not Competitive](docs/06-strategy/chia-ecosystem-position.md): Chia Network Inc's Focus (2025-2026):
+- [PEGIN vs Notbot: Complementary Not Competitive](docs/06-strategy/notbot-integration.md): > **Notbot:** "Prove you're human (not a bot or deepfake)"
+
+### Penguin products (future)
+
+- [Penguin Gateway — Business Plan](docs/07-penguin-products/gateway-business-plan.md): *Decentralized SSO and identity access layer (Chia + DIG)*
+- [Penguin Vault — Business Plan](docs/07-penguin-products/vault-business-plan.md): **Penguin Vault** is a planned decentralized identity and key-custody layer on Chia + DIG: serverless authentication,...
+
+### Wiki
+
+- [PEGIN wiki](docs/wiki/README.md): **Archive:** [_archive/](_archive/) — superseded indexes; do not use as entry points.
+
+### Other
+
+- [PEGIN documentation](docs/README.md): PEGIN (Penguin Gateway Identity) is decentralized SSO on Chia + DIG. **If you build or integrate PEGIN, start with [0...
+
+## Optional
+
+- [Consolidated wiki (human)](docs/wiki/PEGIN_Wiki.md): duplicates topic files — avoid for RAG
+- [Interactive HTML wiki](docs/wiki/PEGIN_Wiki_Knowledge_Base.html): browser only, not for LLM ingestion
+- [Implementation README](README.md): POC summary and repo layout
