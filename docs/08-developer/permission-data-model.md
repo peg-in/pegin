@@ -1,5 +1,5 @@
-# Moved
+# Redirect: PePP permission model (legacy path) → 10-architecture
 
-See [permissions/permission-data-model.md](permissions/permission-data-model.md).
+Canonical: [permission-data-model.md](../10-architecture/permission-data-model.md).
 
-Developer index: [README.md](README.md).
+Developer index: [developer-documentation.md](developer-documentation.md).

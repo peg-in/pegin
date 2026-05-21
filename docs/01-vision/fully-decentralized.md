@@ -41,9 +41,9 @@ PEGIN v3 is a **fully decentralized SSO + custody coordination** model: user dat
 
 ---
 
-## 2. Architecture: DIG as data layer
+## 2. Architecture: DIG as application layer
 
-PEGIN uses **Chia** for identity anchoring and **DIG** for user data and audit logs.
+PEGIN uses **Chia** for identity anchoring and **DIG** as the **decentralized application layer** — identity stores, audit, recovery, and (for integrated apps) **website/service data**, not a single operator database. See [dig-as-application-layer.md](../10-architecture/dig-as-application-layer.md).
 
 ### 2.1 Three layers
 
@@ -161,6 +161,8 @@ Recovery splits **delivery** (how the user gets a link) and **authorization** (w
 | [Mailbox.org](https://mailbox.org/) · [Posteo](https://posteo.de/) | EU privacy-oriented hosts |
 
 **Flow:** register recovery email → lockout → recovery session on DIG → SMTP magic link → verify → optional timelock/guardian → new passkey → DID rotation on Chia → recovery events on DIG, store updates anchored on Chia.
+
+**Implementation detail (guardian + Chia Signer, SDK vault):** [recovery-vault-and-guardians.md](../10-architecture/recovery-vault-and-guardians.md). Vault coin structure composes **Rigidity’s** `VaultInfo` / Rue work in [chia-wallet-sdk](https://github.com/xch-dev/chia-wallet-sdk) — PEGIN does not invent a second custody standard.
 
 ### 5.2 Phase 2 — DIG federated email recovery
 
@@ -403,4 +405,4 @@ Founder may start adjacent work (Vault product, DAO tooling, etc.) **on top of**
 
 ---
 
-*Related: [business-principles.md](business-principles.md) · [sustainable-funding.md](../05-business/sustainable-funding.md) · [08-developer/README.md](../08-developer/README.md)*
+*Related: [business-principles.md](business-principles.md) · [sustainable-funding.md](../05-business/sustainable-funding.md) · [08-developer/developer-documentation.md](../08-developer/developer-documentation.md)*

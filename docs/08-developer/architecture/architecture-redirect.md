@@ -1,6 +1,6 @@
-# Moved
+# Redirect: Architecture folder → 10-architecture
 
-Project architecture is now under **[10-architecture/](../../10-architecture/README.md)**.
+Project architecture is now under **[10-architecture/](../../10-architecture/architecture-overview.md)**.
 
 | Document | Location |
 |----------|----------|

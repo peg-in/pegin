@@ -4,32 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What Is PEGIN
 
-PEGIN (Penguin Gateway Identity) is a fully decentralized SSO built on the Chia blockchain + DIG Network. The POC delivers a single feature: **"Login with PEGIN"** — passkey (biometric) authentication anchored to a Chia DID, issuing a signed JWT. No passwords, no seed phrases, no central server.
+PEGIN is decentralized SSO: **MVP Step 1** = mini wallet + DID + **wallet-issued JWT** (passkey, `@pegin/sdk`) — not DIG-first. **Step 2** = vault + recovery (seed phrase + passkey, multi-device). DIG application layer post-MVP. Detail: `docs/03-use-cases/mvp-strategy.md`.
 
 **Principles anchor:** `docs/01-vision/pegin-manifest.md` (evergreen customer + product + how we work + how we build).
 
 **Team:** `docs/09-how-we-work/` · **Architecture:** `docs/10-architecture/` · **Programmers:** `docs/08-developer/` (`environment/`, `engineering/`, `integration/`).
 
-**Documentation:** [docs/README.md](docs/README.md) · [docs/08-developer/README.md](docs/08-developer/README.md) (code only) · [docs/README.md](docs/README.md). **Specs:** [Spec 1](docs/04-technical/specs/tech-stack.md) · [Spec 2](docs/04-technical/specs/enterprise-identity-spec.md). **Ecosystem:** [xch-dev](https://github.com/xch-dev), [docs.xch.dev](https://docs.xch.dev), [Yakuhito/slot-machine](https://github.com/Yakuhito/slot-machine), [XCHandles docs](https://docs.xchandles.com). **AI/RAG:** [llms.txt](llms.txt), [docs/ai/CONTEXT.md](docs/ai/CONTEXT.md) — regenerate with `python3 scripts/generate-ai-knowledge-base.py`.
+**Documentation:** [docs/README.md](Wiki%20Links.md) · [docs/08-developer/developer-documentation.md](docs/08-developer/developer-documentation.md) (code only) · [docs/README.md](Wiki%20Links.md). **Specs:** [Spec 1](docs/04-technical/specs/tech-stack.md) · [Spec 2](docs/04-technical/specs/enterprise-identity-spec.md). **Ecosystem:** [xch-dev](https://github.com/xch-dev), [docs.xch.dev](https://docs.xch.dev), [Yakuhito/slot-machine](https://github.com/Yakuhito/slot-machine), [XCHandles docs](https://docs.xchandles.com). **AI/RAG:** [llms.txt](llms.txt), [docs/ai/CONTEXT.md](docs/ai/CONTEXT.md) — regenerate with `python3 scripts/generate-ai-knowledge-base.py`.
 
 ## Planned Workspace Structure
 
-Modular Rust workspace (Fowler layering + DDD bounded contexts). **Full layout:** [docs/10-architecture/application-architecture.md](docs/10-architecture/application-architecture.md).
+**Step 1 bootstrap:** [docs/08-developer/engineering/step1-implementation-bootstrap.md](docs/08-developer/engineering/step1-implementation-bootstrap.md). **Full layout:** [docs/10-architecture/application-architecture.md](docs/10-architecture/application-architecture.md).
 
 ```
-pegin-domain/           # shared types, errors
-pegin-identity/         # DID, passkey (domain + ports)
-pegin-auth/             # sessions, JWT use cases
-pegin-authorization/    # PePP grants (Phase 2)
-pegin-audit/            # DIG append + Chia anchors
-pegin-infrastructure/   # Chia/DIG/SQL Data Mappers (no Active Record on core)
-pegin-api/              # Axum presentation
-pegin-protocols/        # OIDC, SAML, OAuth, SCIM
-pegin-contracts/        # Rue smart contracts
-pegin-cli/              # developer CLI
-packages/sdk/           # TypeScript WebAuthn + JWT
-pegin-dashboard/        # React + Shadcn (Tauri v2 like Sage)
+crates/pegin-domain/       crates/pegin-identity/
+crates/pegin-wallet/       # Step 1 IdP: DID, passkey, JWT
+crates/pegin-infrastructure/
+apps/mini/                  # Tauri account app
+packages/sdk/               # @pegin/sdk
 ```
+
+Later: `contracts/` (Step 2 vault), `pegin-protocols/`, `pegin-authorization/` (PePP), `pegin-api/`.
 
 **Persistence:** domain on DIG + Chia anchors; optional **SQL** (sqlx + Data Mapper) for operator/OIDC cache only.
 
@@ -78,7 +73,7 @@ User Device ──passkey──▶ PEGIN Service (Rust/Axum)
 Contracts live in `pegin-contracts/src/`:
 - `pegin_did.rue` — DID registration + update
 - `pegin_credential.rue` — credential NFT issuance with royalty puzzle
-- `pegin_recovery.rue` — multi-sig timelocked recovery
+- Recovery via chia-wallet-sdk `VaultInfo` + Rue (Rigidity upstream); see `docs/10-architecture/recovery-vault-and-guardians.md`
 - `pegin_revoke.rue` — credential revocation
 
 Compile with `rue-cli`; test with `chia-sdk-test` simulator. VSCode extension: `rue-vscode`.

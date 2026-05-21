@@ -2,7 +2,7 @@
 
 > **Inspired by:** [*Rework*](https://37signals.com/books/rework) — Jason Fried & David Heinemeier Hansson (Basecamp / 37signals).  
 > Reference edition: [Internet Archive — Rework v0.9](https://archive.org/details/fried-jason-heinemeier-hansson-david-rework-v.-0.9_202502/Fried%2C%20Jason%20%26%20Heinemeier%20Hansson%2C%20David%20-%20Rework%20-%20ctrl/)  
-> **Sibling docs:** [collaboration-tooling.md](collaboration-tooling.md) · [README.md](README.md) · **Programmers:** [08-developer/](../08-developer/README.md)
+> **Sibling docs:** [collaboration-tooling.md](collaboration-tooling.md) · [team-how-we-work.md](team-how-we-work.md) · **Programmers:** [08-developer/](../08-developer/developer-documentation.md)
 
 PEGIN is built as a **remote, async, low-meeting** project. This is part of the product culture: decentralized infrastructure deserves decentralized collaboration — not calendar theater.
 
@@ -158,7 +158,7 @@ When you see the fix, open the PR. Don’t wait for permission if it’s inside 
 
 ### Embrace constraints
 
-Small team, no 24/7 war room, no meeting culture — **constraints force better architecture** (DIG, open protocol — see [10-architecture/](../10-architecture/README.md)).
+Small team, no 24/7 war room, no meeting culture — **constraints force better architecture** (DIG, open protocol — see [10-architecture/](../10-architecture/architecture-overview.md)).
 
 ---
 
@@ -170,7 +170,7 @@ Small team, no 24/7 war room, no meeting culture — **constraints force better 
 | **Location** | Work where you focus; respect data rules for customer deployments ([competitive-moat.md](../../05-business/competitive-moat.md)) |
 | **Tools** | Git + PRs, issues, `docs/` — not slide decks |
 | **Visibility** | Outcome-based: merged PRs, green CI, updated docs — not online presence |
-| **Onboarding** | [08-developer/README.md](../08-developer/README.md) build path; no “watch these 20 meetings” |
+| **Onboarding** | [08-developer/developer-documentation.md](../08-developer/developer-documentation.md) build path; no “watch these 20 meetings” |
 
 ---
 
@@ -212,7 +212,7 @@ Small team, no 24/7 war room, no meeting culture — **constraints force better 
 |-----|-----|
 | [collaboration-tooling.md](collaboration-tooling.md) | GitHub, Basecamp, what goes where |
 | [pegin-manifest.md](../../01-vision/pegin-manifest.md) | Trust, mottos, W1–W11 |
-| [10-architecture/README.md](../10-architecture/README.md) | System design |
+| [10-architecture/architecture-overview.md](../10-architecture/architecture-overview.md) | System design |
 | [business-principles.md](../../01-vision/business-principles.md) | Why the business aligns with users |
 
 *How we work v1.1 · May 2026 · Culture doc for all roles; not employment contract.*

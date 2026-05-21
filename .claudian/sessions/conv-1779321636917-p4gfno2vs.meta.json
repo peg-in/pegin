@@ -1,0 +1,24 @@
+{
+  "id": "conv-1779321636917-p4gfno2vs",
+  "providerId": "claude",
+  "title": "Explore PEGIN tech stack",
+  "titleGenerationStatus": "success",
+  "createdAt": 1779321636932,
+  "updatedAt": 1779321657118,
+  "lastResponseAt": 1779321657118,
+  "sessionId": "4c72c8a1-69dc-4591-9d63-1d39de031c2a",
+  "providerState": {
+    "providerSessionId": "4c72c8a1-69dc-4591-9d63-1d39de031c2a"
+  },
+  "currentNote": "README.md",
+  "usage": {
+    "model": "haiku",
+    "inputTokens": 8,
+    "cacheCreationInputTokens": 30707,
+    "cacheReadInputTokens": 0,
+    "contextWindow": 200000,
+    "contextTokens": 30715,
+    "percentage": 15,
+    "contextWindowIsAuthoritative": true
+  }
+}

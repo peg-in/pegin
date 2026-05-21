@@ -1,6 +1,6 @@
 # Infrastructure and tooling principles
 
-> **Hub:** [README.md](README.md) · **Developer index:** [../README.md](../README.md) · **Setup:** [developer-environment.md](developer-environment.md) · **Team coordination:** [collaboration-tooling.md](../../09-how-we-work/collaboration-tooling.md)
+> **Hub:** [environment-and-tooling-index.md](environment-and-tooling-index.md) · **Developer index:** [../README.md](../README.md) · **Setup:** [developer-environment.md](developer-environment.md) · **Team coordination:** [collaboration-tooling.md](../../09-how-we-work/collaboration-tooling.md)
 
 Defaults for **what we pay for**, **where we host**, and **what we run in the stack**. Anchored in [pegin-manifest.md § Layer IV](../../01-vision/pegin-manifest.md#layer-iv--how-we-build).
 

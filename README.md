@@ -6,37 +6,37 @@ Fully decentralized SSO on **Chia** + **DIG Network**. Passkey login anchored to
 
 ## Documentation
 
-**[docs/README.md](docs/README.md)** — full map by role.
+**[docs/README.md](Wiki%20Links.md)** — full map by role.
 
-| Role | Start here |
-|------|------------|
-| **Everyone** | [Manifest](docs/01-vision/pegin-manifest.md) → [How we work](docs/09-how-we-work/README.md) → [Architecture](docs/10-architecture/README.md) |
-| **Programmers** | Then [08-developer/](docs/08-developer/README.md) + [Spec 1](docs/04-technical/specs/tech-stack.md) |
+| Role            | **Start** here                                                                                                                                                        |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Everyone**    | [Manifest](docs/01-vision/pegin-manifest.md) → [How we work](docs/09-how-we-work/team-how-we-work.md) → [Architecture](docs/10-architecture/architecture-overview.md) |
+| **Programmers** | Then [08-developer/](docs/08-developer/developer-documentation.md) + [Spec 1](docs/04-technical/specs/tech-stack.md)                                                  |
 
 Also: [CLAUDE.md](CLAUDE.md) · [llms.txt](llms.txt)
 
 ---
 
-## POC: Login with PEGIN
+## MVP Step 1 (build first)
 
-```
-User (passkey) → PEGIN Service (Rust/Axum) → Chia DID + DIG → JWT to app
-```
+**Wallet-as-IdP:** account app + DID + passkey → **JWT in wallet** → `@pegin/sdk` + demo site. No DIG-first; no vault until Step 2.
 
-**Success criteria:** register &lt; 5s, login &lt; 1s, DID on testnet, Chrome/Safari/Firefox.
+**Start coding:** [docs/08-developer/engineering/step1-implementation-bootstrap.md](docs/08-developer/engineering/step1-implementation-bootstrap.md)
+
+**Success criteria:** silent session when JWT valid; one-button login; username in JWT; DID on testnet.
 
 ---
 
-## Planned workspace
+## Planned workspace (Step 1 subset)
 
-| Crate / package | Role |
-|-----------------|------|
-| `pegin-core/` | DID, WebAuthn, JWT (Rust/Axum) |
-| `pegin-protocols/` | OIDC, SAML, OAuth, SCIM |
-| `pegin-contracts/` | Rue smart contracts |
-| `pegin-cli/` | Developer CLI |
-| `@pegin/sdk/` | Login button + browser WebAuthn |
-| `pegin-dashboard/` | React admin UI (Tauri v2, Sage pattern) |
+| Path | Role |
+|------|------|
+| `crates/pegin-wallet/` | DID, passkey, JWT sign (core) |
+| `crates/pegin-domain/` | Types, errors |
+| `apps/mini/` | Tauri account app |
+| `packages/sdk/` | `@pegin/sdk` — one button, no redirect |
+| `contracts/` | Rue vault — **Step 2** |
+| `pegin-protocols/` | OIDC/SAML — post-MVP |
 
 ---
 

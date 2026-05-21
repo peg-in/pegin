@@ -15,19 +15,19 @@
 
 ### Developer documentation (primary)
 
-- [PEGIN developer documentation](docs/08-developer/README.md): **Start here if you build or integrate PEGIN.** Specs, architecture, SDK, and protocol reference live in this folder....
-- [Architecture](docs/10-architecture/README.md): System design for identity on **Chia** and data on **DIG**.
+- [PEGIN developer documentation](docs/08-developer/developer-documentation.md): **Start here if you build or integrate PEGIN.** Specs, architecture, SDK, and protocol reference live in this folder....
+- [Architecture](docs/10-architecture/architecture-overview.md): System design for identity on **Chia** and data on **DIG**.
 - [PEGIN + DIG Network: Enterprise Application Architecture Transformation](docs/10-architecture/dig-enterprise-transformation.md): > **The Insight:** PEGIN (authentication + permissions) + DIG Network (data) solve the infrastructure layer entirely....
 - [DIG Network Incentives + PEGIN DSSO Integration](docs/10-architecture/dig-incentives-integration.md): > **Direction:** DIG stores PEGIN identity data; peers may earn network incentives (e.g. XCH) for storage and proofs....
 - [PEGIN On-Chain Architecture](docs/10-architecture/on-chain-architecture.md): *Technical architecture — blockchain-only design (Chia + optional DIG)*
-- [Integration](docs/08-developer/integration/README.md): Integrate **Login with PEGIN** in your application.
+- [Integration](docs/08-developer/integration/integration-overview.md): Integrate **Login with PEGIN** in your application.
 - [PEGIN SDK integration guide](docs/08-developer/integration/sdk-guide.md): > **Developer hub:** [../README.md](../README.md) · **Spec 1:** [../specs/tech-stack.md](../specs/tech-stack.md) · **...
-- [Permissions (PePP)](docs/10-architecture/README.md): **Phase 2** — not part of the SSO POC.
+- [Permissions (PePP)](docs/10-architecture/architecture-overview.md): **Phase 2** — not part of the SSO POC.
 - [Permission data model (PePP)](docs/10-architecture/permission-data-model.md): Technical reference for Phase 2. Not implemented in POC.
-- [Future products (Penguin)](docs/08-developer/products/README.md): Technical designs after PEGIN core SSO. See [roadmap.md](../../03-use-cases/roadmap.md) Phase 4+.
+- [Future products (Penguin)](docs/08-developer/products/products-redirect.md): Technical designs after PEGIN core SSO. See [roadmap.md](../../03-use-cases/roadmap.md) Phase 4+.
 - [Pengin Gateway — Technical Architecture](docs/08-developer/products/gateway-architecture.md): _Decentralized SSO on Chia + DIG_
 - [Penguin Vault — Technical Architecture](docs/08-developer/products/vault-architecture.md): *Implementation guide — Chia + DIG*
-- [Specifications](docs/04-technical/specs/README.md): Implementation specs for PEGIN engineers. Read **Spec 1** before writing code; read **Spec 2** before enterprise prot...
+- [Specifications](docs/04-technical/specs/specifications-index.md): Implementation specs for PEGIN engineers. Read **Spec 1** before writing code; read **Spec 2** before enterprise prot...
 - [Spec 2 — Enterprise identity (AD / Entra parity)](docs/04-technical/specs/enterprise-identity-spec.md): > **Goal:** PEGIN as a decentralized IdP that can **federate with** or **replace** Microsoft Entra ID (Azure AD) for ...
 - [Spec 1 — PEGIN technical stack (Chia + POC)](docs/04-technical/specs/tech-stack.md): > **PEGIN** = **P**enguin **G**ateway **I**de**n**tity — decentralized SSO on Chia + DIG.
 
@@ -67,7 +67,7 @@
 
 ### Wiki
 
-- [PEGIN wiki](docs/wiki/README.md): HTML wiki + consolidated markdown overview; canonical content is under docs/.
+- [PEGIN wiki](docs/wiki/wiki-overview.md): HTML wiki + consolidated markdown overview; canonical content is under docs/.
 
 ### Other
 

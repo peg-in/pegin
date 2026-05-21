@@ -1,6 +1,6 @@
 # Linting and formatting
 
-> **Hub:** [../README.md](../README.md) · **Architecture:** [../../10-architecture/README.md](../../10-architecture/README.md) · **Tests:** [test-architecture.md](test-architecture.md) · **Structure:** [../architecture/application-architecture.md](../architecture/application-architecture.md)
+> **Hub:** [../README.md](../README.md) · **Architecture:** [../../10-architecture/architecture-overview.md](../../10-architecture/architecture-overview.md) · **Tests:** [test-architecture.md](test-architecture.md) · **Structure:** [../architecture/application-architecture.md](../architecture/application-architecture.md)
 
 PEGIN aims for **readable, consistent code** without treating [*Clean Code*](https://www.pearson.com/en-us/subject-catalog/p/clean-code-a-handbook-of-agile-software-craftsmanship/P200000003285) as a religion. Formatters and linters enforce the mechanical rules; the principles below guide reviews and design.
 

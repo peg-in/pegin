@@ -1,6 +1,6 @@
 # Collaboration tooling
 
-> **Hub:** [README.md](README.md) · **Culture:** [how-we-work.md](how-we-work.md) · **Programmers:** [developer-environment.md](../08-developer/environment/developer-environment.md)
+> **Hub:** [team-how-we-work.md](team-how-we-work.md) · **Culture:** [how-we-work.md](how-we-work.md) · **Programmers:** [developer-environment.md](../08-developer/environment/developer-environment.md)
 
 How **everyone on the team** coordinates — whether you write code, run pilots, or own product. No Rust, no IDE setup here.
 
@@ -29,7 +29,7 @@ PEGIN intentionally pays for **two** services only. Everything else in the stack
 |---------|-----------|
 | Vision, principles, architecture | `docs/` (e.g. [01-vision/](../01-vision/), [10-architecture/](../10-architecture/)) + PR |
 | Implementation specs | [04-technical/specs/](../04-technical/specs/) |
-| Code, SDK, tests | GitHub — see [08-developer/](../08-developer/README.md) |
+| Code, SDK, tests | GitHub — see [08-developer/](../08-developer/developer-documentation.md) |
 | Sprint goals, launch checklist, pilot status | Basecamp |
 | Security incident, legal, customer intro | Team email → then GitHub/Basecamp as needed |
 
@@ -97,6 +97,6 @@ Code & SDK       → docs/08-developer/ (programmers)
 |----------|--------|
 | [how-we-work.md](how-we-work.md) | Remote, library days, *Rework* |
 | [developer-environment.md](../08-developer/environment/developer-environment.md) | Rust, Node, editors (programmers) |
-| [10-architecture/README.md](../10-architecture/README.md) | System design for all roles |
+| [10-architecture/architecture-overview.md](../10-architecture/architecture-overview.md) | System design for all roles |
 
 *Last updated: May 2026*

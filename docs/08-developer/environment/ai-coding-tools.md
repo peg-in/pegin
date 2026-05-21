@@ -1,6 +1,6 @@
 # AI coding tools — optional strategy & privacy
 
-> **Hub:** [README.md](README.md) · **Setup:** [developer-environment.md](developer-environment.md) · **All roles (docs):** [collaboration-tooling.md](../../09-how-we-work/collaboration-tooling.md) · **Repo context:** [AGENTS.md](../../../AGENTS.md) · [CONTEXT.md](../../ai/CONTEXT.md)
+> **Hub:** [environment-and-tooling-index.md](environment-and-tooling-index.md) · **Setup:** [developer-environment.md](developer-environment.md) · **All roles (docs):** [collaboration-tooling.md](../../09-how-we-work/collaboration-tooling.md) · **Repo context:** [AGENTS.md](../../../AGENTS.md) · [CONTEXT.md](../../ai/CONTEXT.md)
 
 **Optional** guidance for programmers and leads. PEGIN does **not** require AI tools. When you use them, follow this strategy and privacy policy so customer data, keys, and strategy stay under control.
 
@@ -35,7 +35,7 @@ Run an **open-source inference stack** on your machine or on a **company-control
 
 Use local agents for work that should **not** train vendor models or leave the EU:
 
-- Comparing architecture options against [10-architecture/](../../10-architecture/README.md)
+- Comparing architecture options against [10-architecture/](../../10-architecture/architecture-overview.md)
 - Drafting sections of `docs/` or pilot worksheets (human review before merge)
 - Exploring Rue/Chia integration ideas against [tech-stack.md](../../04-technical/specs/tech-stack.md)
 - Internal “what if we shipped X in Phase 2?” — output stays on your machine or Hetzner

@@ -4,7 +4,7 @@
 
 ## What PePP is
 
-**PePP** (PEGIN Permission Platform) is the access-control layer that sits on top of [PEGIN SSO](../08-developer/README.md): who may reach which app, API, or internal resource, for how long, under what conditions — with revocation that actually sticks.
+**PePP** (PEGIN Permission Platform) is the access-control layer that sits on top of [PEGIN SSO](../08-developer/developer-documentation.md): who may reach which app, API, or internal resource, for how long, under what conditions — with revocation that actually sticks.
 
 Enterprises often bought **Citrix** (and a corporate **VPN**) to solve two different problems with one heavy stack:
 

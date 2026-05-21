@@ -1,4 +1,4 @@
-# Moved
+# Redirect: Developer tooling & setup (split by audience)
 
 Split for audience clarity:
 
@@ -7,4 +7,4 @@ Split for audience clarity:
 | **Everyone** | [collaboration-tooling.md](collaboration-tooling.md) |
 | **Programmers** | [developer-environment.md](../08-developer/environment/developer-environment.md) |
 
-Hub: [README.md](README.md).
+Hub: [team-how-we-work.md](team-how-we-work.md).

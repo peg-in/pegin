@@ -8,23 +8,28 @@ Use this file as a system prompt or project context when the full knowledge base
 
 ## What PEGIN is
 
-**PEGIN** (Penguin Gateway Identity) is a fully decentralized SSO on the **Chia blockchain** and **DIG Network**. Users authenticate with **passkeys** (WebAuthn); identity is anchored to a **Chia DID**; apps receive a signed **JWT**.
+**PEGIN** (Penguin Gateway Identity) is decentralized SSO on **Chia + DIG**. **Chia** anchors DID/vault and DIG store roots; **DIG** is the **application layer** (identity, audit, app/service data — not a central PEGIN database). **Wallet** = decentralized IdP (JWT for websites). Passkey login; blockchain hidden in UX. Apps receive **JWT**; user-owned data targets **DIG stores**.
 
-## POC scope (build this first)
+## MVP scope (two steps — not DIG-first)
 
-Single feature: **"Login with PEGIN"** — register/login with device biometrics, DID on Chia testnet, JWT to relying party. Target: register &lt; 5s, login &lt; 1s. Protocol expansion: WebAuthn → OIDC → SAML → …
+**Step 1:** **One button** (best UI, **no redirect**), instant if JWT valid, else one-tap Face ID. Account in app (username + DID); JWT `preferred_username`. See `user-facing-ux-principles.md`.
 
-Full plan: `docs/03-use-cases/roadmap.md`.
+**Step 2:** **Vault** (chia-wallet-sdk / Rigidity Rue) — recover DID on **multiple devices**; **seed phrase** (recovery only) + **passkey** (login + re-bind).
+
+**Post-MVP:** DIG application layer, email guardian, Chia Signer, PePP.
+
+Detail: `docs/03-use-cases/mvp-strategy.md` · `docs/10-architecture/mini-wallet-and-recovery-vault.md` · roadmap: `docs/03-use-cases/roadmap.md`.
 
 ## Planned codebase
 
 | Component | Stack | Role |
 |-----------|-------|------|
-| `pegin-core` | Rust, Axum | DID, WebAuthn, JWT |
-| `pegin-contracts` | Rue → CLVM | DID, credential NFT, recovery, revoke |
-| `pegin-protocols` | Rust | OIDC, SAML, OAuth, SCIM |
+| `pegin-wallet` | Rust, chia-wallet-sdk | Mini wallet: DID + recovery vault txs |
+| `pegin-auth` | Rust, Axum, passkey | WebAuthn, JWT, OIDC, faucet |
+| `pegin-contracts` | Rue → CLVM | DID + `pegin_recovery_vault.rue` |
+| `pegin-mini` | Tauri v2 + React | Client shell (Sage pattern) |
 | `@pegin/sdk` | TypeScript | Login button, browser WebAuthn |
-| `pegin-dashboard` | React, Tauri v2 | Admin UI (Sage wallet pattern) |
+| `pegin-protocols` | Rust | OIDC, SAML, … (post-POC) |
 
 Key deps: `chia-wallet-sdk`, `passkey`, `rue-cli`, DIG storage (`dig-l2-storage`).
 
@@ -67,10 +72,14 @@ Complementary to **Chia Network Inc.** Uses xch-dev toolchain (`chia-wallet-sdk`
 | **Programmer docs** | `docs/08-developer/README.md` |
 | Tech stack (Spec 1) | `docs/04-technical/specs/tech-stack.md` |
 | SDK guide | `docs/08-developer/integration/sdk-guide.md` |
+| Existing apps + SSO protocols | `docs/08-developer/integration/existing-apps-and-sso-protocols.md` |
 | On-chain architecture | `docs/10-architecture/on-chain-architecture.md` |
 | Enterprise SSO (Spec 2) | `docs/04-technical/specs/enterprise-identity-spec.md` |
 | Roadmap | `docs/03-use-cases/roadmap.md` |
 | POC | `docs/03-use-cases/mvp-strategy.md` |
+| Mini wallet + recovery vault | `docs/10-architecture/mini-wallet-and-recovery-vault.md` |
+| Recovery (email guardian, Chia Signer) | `docs/10-architecture/recovery-vault-and-guardians.md` |
+| DIG application layer | `docs/10-architecture/dig-as-application-layer.md` |
 | xch-dev | https://github.com/xch-dev · https://docs.xch.dev |
 | slot-machine / XCHandles | https://github.com/Yakuhito/slot-machine · https://docs.xchandles.com |
 | Full index | `docs/README.md` |

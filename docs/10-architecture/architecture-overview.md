@@ -5,8 +5,8 @@ High-level system design for **everyone on the team** — product, business, ope
 | Audience | Start here |
 |----------|------------|
 | **Any team member** | [application-architecture.md](application-architecture.md) (overview) → [on-chain-architecture.md](on-chain-architecture.md) |
-| **Programmers** | Then [08-developer/README.md](../08-developer/README.md) + [04-technical/specs/](../04-technical/specs/README.md) |
-| **Culture & tools** | [09-how-we-work/](../09-how-we-work/README.md) |
+| **Programmers** | Then [08-developer/developer-documentation.md](../08-developer/developer-documentation.md) + [04-technical/specs/](../04-technical/specs/specifications-index.md) |
+| **Culture & tools** | [09-how-we-work/](../09-how-we-work/team-how-we-work.md) |
 
 **Repo phase:** Documentation foundation — no deployed services yet.
 
@@ -16,11 +16,14 @@ High-level system design for **everyone on the team** — product, business, ope
 
 | # | Document | Topic |
 |---|----------|--------|
-| 1 | [application-architecture.md](application-architecture.md) | Layers, modules, data plane, DIG vs Chia vs optional SQL |
-| 2 | [on-chain-architecture.md](on-chain-architecture.md) | DIDs, Rue contracts, verification |
-| 3 | [permission-data-model.md](permission-data-model.md) | PePP grants & audit (Phase 2) |
-| 4 | [dig-enterprise-transformation.md](dig-enterprise-transformation.md) | Enterprise apps on DIG |
-| 5 | [dig-incentives-integration.md](dig-incentives-integration.md) | Peer economics |
+| 1 | [mini-wallet-and-recovery-vault.md](mini-wallet-and-recovery-vault.md) | **POC:** mini wallet, 1 DID + 1 recovery vault, faucet, instant login |
+| 1b | [recovery-vault-and-guardians.md](recovery-vault-and-guardians.md) | SDK vault (Rigidity), email guardian, Chia Signer recovery |
+| 1c | [dig-as-application-layer.md](dig-as-application-layer.md) | DIG for websites, services, and user-owned data |
+| 2 | [application-architecture.md](application-architecture.md) | Layers, modules, data plane, DIG vs Chia vs optional SQL |
+| 3 | [on-chain-architecture.md](on-chain-architecture.md) | DIDs, Rue contracts, verification |
+| 4 | [permission-data-model.md](permission-data-model.md) | PePP grants & audit (Phase 2) |
+| 5 | [dig-enterprise-transformation.md](dig-enterprise-transformation.md) | Enterprise apps on DIG |
+| 6 | [dig-incentives-integration.md](dig-incentives-integration.md) | Peer economics |
 
 ### Future products
 
@@ -36,7 +39,7 @@ High-level system design for **everyone on the team** — product, business, ope
 | Layer | What goes here |
 |-------|----------------|
 | **Chia** | DIDs, contracts, **store-update anchors** |
-| **DIG** | Profiles, sessions, **grants**, **audit logs** |
+| **DIG** | **Application layer** — identity, sessions, audit, **app/service data**, grants |
 | **Never on Chia** | Full audit bodies, bulk session JSON |
 
 Detail: [application-architecture.md](application-architecture.md) · vision: [fully-decentralized.md](../01-vision/fully-decentralized.md)

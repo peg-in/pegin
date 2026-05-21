@@ -1,8 +1,8 @@
 # Developer environment
 
-> **Hub:** [README.md](README.md) · **Developer index:** [../README.md](../README.md) · **Principles:** [infrastructure-and-tooling-principles.md](infrastructure-and-tooling-principles.md) · **Team tools:** [collaboration-tooling.md](../../09-how-we-work/collaboration-tooling.md) · **Spec 1:** [../../04-technical/specs/tech-stack.md](../../04-technical/specs/tech-stack.md)
+> **Hub:** [environment-and-tooling-index.md](environment-and-tooling-index.md) · **Developer index:** [../README.md](../README.md) · **Principles:** [infrastructure-and-tooling-principles.md](infrastructure-and-tooling-principles.md) · **Team tools:** [collaboration-tooling.md](../../09-how-we-work/collaboration-tooling.md) · **Spec 1:** [../../04-technical/specs/tech-stack.md](../../04-technical/specs/tech-stack.md)
 
-**Programmers only** — how we will set up machines when the codebase lands. Non-developers: [09-how-we-work/](../../09-how-we-work/README.md).
+**Programmers only** — how we will set up machines when the codebase lands. Non-developers: [09-how-we-work/](../../09-how-we-work/team-how-we-work.md).
 
 **Repo phase:** Documentation and wiki foundation only — **no `deploy/` compose stack in the repo yet.** Podman/Docker dev setup is a **planned** direction, not something you run today.
 

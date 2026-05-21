@@ -1,7 +1,7 @@
 # Spec 1 — PEGIN technical stack (Chia + POC)
 
 > **PEGIN** = **P**enguin **G**ateway **I**de**n**tity — decentralized SSO on Chia + DIG.  
-> **Specs hub:** [../README.md](../README.md) · **Developer hub:** [../../08-developer/README.md](../../08-developer/README.md)  
+> **Specs hub:** [../technical-hub.md](../technical-hub.md) · **Developer hub:** [../../08-developer/developer-documentation.md](../../08-developer/developer-documentation.md)  
 > **Application structure (PoEAA / DDD):** [../../10-architecture/application-architecture.md](../../10-architecture/application-architecture.md)  
 > **Spec 2 (Entra / AD / SAML):** [enterprise-identity-spec.md](enterprise-identity-spec.md)  
 > **Phases:** [roadmap.md](../../03-use-cases/roadmap.md) · **POC scope:** [mvp-strategy.md](../../03-use-cases/mvp-strategy.md)
@@ -92,7 +92,8 @@ That's the entire POC. Everything else (SAML, SCIM, LDAP, custody, vault, tokens
 - **Users already know it:** Face ID, fingerprint, Windows Hello — already on every device
 - **Zero learning curve:** No seed phrases, no wallet setup for the initial login
 - **FIDO2 standard:** Phishing-resistant by design, backed by Apple/Google/Microsoft
-- **Blockchain invisible:** User doesn't know Chia exists (it's infrastructure, not UX)
+- **Blockchain invisible:** Users and employees never see Chia, XCH, wallets, or seeds at login; companies integrate via **OIDC/SAML-shaped SSO**, not node ops
+- **Dual audience:** Same “Login with PEGIN” for **consumers** and **workforce SSO**; FIDO2 story for security buyers, decentralization for architects only
 - **Enterprise ready:** FIDO2/WebAuthn is already approved by most enterprise security teams
 - **Differentiator:** No other SSO provider anchors passkeys to a blockchain DID
 
@@ -114,17 +115,34 @@ User Device                  PEGIN Service              Chia Blockchain
                             └──────────────┘
 ```
 
-### POC Deliverables
+### POC deliverables (mini wallet first)
 
-1. `pegin-core` — Rust crate: DID creation on Chia, WebAuthn registration/login
-2. `pegin-contracts` — Rue smart contracts: DID registration, credential anchoring
-3. `@pegin/sdk` — TypeScript SDK: "Login with PEGIN" button for any website
-4. `pegin-demo` — Demo web app showing the login flow
+> **Architecture detail:** [mini-wallet-and-recovery-vault.md](../../10-architecture/mini-wallet-and-recovery-vault.md)
 
-### POC Success Criteria
+1. **`pegin-wallet`** — Rust library: chia-wallet-sdk; one DID + one recovery vault per user
+2. **`pegin-contracts`** — Rue: thin extensions only; **vault + DID drivers from chia-wallet-sdk** ([Rigidity](https://github.com/Rigidity) upstream `VaultInfo`)
+3. **`pegin-auth`** — Axum: WebAuthn, JWT, OIDC discovery, testnet faucet client
+4. **`pegin-mini`** — Tauri v2 + React shell (reference: Sage)
+5. **`@pegin/sdk`** — TypeScript: "Login with PEGIN" for relying parties
+6. **`pegin-faucet`** — Testnet fee sponsorship (module or microservice)
 
-- User registers with passkey in under 5 seconds
-- User logs in with passkey in under 1 second
+### POC prototype repositories (priority)
+
+| Priority | Repository | Use |
+| -------- | ---------- | --- |
+| P0 | [chia-wallet-sdk](https://github.com/xch-dev/chia-wallet-sdk) | `DidInfo`, spends, `chia-sdk-test` |
+| P0 | [rue](https://github.com/xch-dev/rue) + [Rigidity](https://github.com/Rigidity) / chia-wallet-sdk | `VaultInfo`, custody puzzle, vault spends |
+| P0 | `passkey` crate | WebAuthn in `pegin-auth` |
+| P1 | [sage](https://github.com/xch-dev/sage) | Tauri + React app pattern |
+| P1 | [dig-l2-storage](https://github.com/DIG-Network/dig-l2-storage) | Passkey ↔ DID profile |
+| P1 | [docs.chia.net DIDs](https://docs.chia.net/academy-did) | Standard alignment |
+| P2 | [slot-machine](https://github.com/Yakuhito/slot-machine) | `*.pegin` naming (post-POC) |
+| Later | Full [vault-architecture](../../10-architecture/products/vault-architecture.md) stack | Enterprise Penguin Vault |
+
+### POC success criteria
+
+- Account created (perceived): **~3 seconds** (optimistic UX; faucet pays fees)
+- User logs in with passkey in under **1 second** (perceived)
 - DID anchored on Chia testnet
 - Login works across Chrome, Safari, Firefox
 - Zero passwords, zero seed phrases in the user flow

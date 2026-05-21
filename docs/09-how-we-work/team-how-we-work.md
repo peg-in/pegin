@@ -1,13 +1,13 @@
-# How we work
+# How we work — team index
 
 Collaboration and work principles for **the whole PEGIN team** — product, business, operations, and engineering. Not for implementation detail.
 
 | | |
 |---|---|
 | **Anchor** | [pegin-manifest.md § Layer III](../01-vision/pegin-manifest.md#layer-iii--how-we-work) |
-| **System design (all roles)** | [10-architecture/](../10-architecture/README.md) |
-| **Programmers** | [08-developer/](../08-developer/README.md) |
-| **Specs** | [04-technical/specs/](../04-technical/specs/README.md) |
+| **System design (all roles)** | [10-architecture/](../10-architecture/architecture-overview.md) |
+| **Programmers** | [08-developer/](../08-developer/developer-documentation.md) |
+| **Specs** | [04-technical/specs/](../04-technical/specs/specifications-index.md) |
 
 ---
 
@@ -27,7 +27,7 @@ Collaboration and work principles for **the whole PEGIN team** — product, busi
 1. [pegin-manifest.md](../01-vision/pegin-manifest.md)  
 2. [how-we-work.md](how-we-work.md)  
 3. [collaboration-tooling.md](collaboration-tooling.md)  
-4. [10-architecture/README.md](../10-architecture/README.md) — how the system fits together  
+4. [10-architecture/architecture-overview.md](../10-architecture/architecture-overview.md) — how the system fits together  
 
 ### Engineer (add after the above)
 
@@ -41,7 +41,7 @@ Collaboration and work principles for **the whole PEGIN team** — product, busi
 | Need | Where |
 |------|--------|
 | Rust / Node / IDE setup | [08-developer/environment/developer-environment.md](../08-developer/environment/developer-environment.md) |
-| Lint, tests, SDK | [08-developer/](../08-developer/README.md) |
+| Lint, tests, SDK | [08-developer/](../08-developer/developer-documentation.md) |
 | Spec 1 & 2 | [04-technical/specs/](../04-technical/specs/) |
 
 **Moved:** `developer-tooling-and-setup.md` → split into [collaboration-tooling.md](collaboration-tooling.md) + [developer-environment.md](../08-developer/environment/developer-environment.md).

@@ -1,9 +1,9 @@
 # Application architecture (PoEAA + DDD)
 
 > **Reference:** [Martin Fowler — *Patterns of Enterprise Application Architecture*](https://martinfowler.com/books/eaa.html) (layering, domain model, data mapper, repository, service layer, unit of work).  
-> **Hub:** [README.md](README.md) · **Developers:** [../08-developer/README.md](../08-developer/README.md) · **On-chain:** [on-chain-architecture.md](on-chain-architecture.md) · **DIG:** [dig-enterprise-transformation.md](dig-enterprise-transformation.md)
+> **Hub:** [architecture-overview.md](architecture-overview.md) · **Developers:** [../08-developer/developer-documentation.md](../08-developer/developer-documentation.md) · **On-chain:** [on-chain-architecture.md](on-chain-architecture.md) · **DIG:** [dig-enterprise-transformation.md](dig-enterprise-transformation.md)
 
-This document defines **how Rust services are structured** before the workspace is fully implemented. It maps classic enterprise patterns to PEGIN’s split persistence: **Chia** (anchors), **DIG** (primary data), optional **SQL** (operator-only).
+This document defines **how Rust services are structured** before the workspace is fully implemented. It maps classic enterprise patterns to PEGIN’s split persistence: **Chia** (anchors), **DIG** (application layer — primary data), optional **SQL** (operator-only). See [dig-as-application-layer.md](dig-as-application-layer.md).
 
 ---
 
@@ -98,29 +98,29 @@ Contexts communicate via **application services** and **domain events** (e.g. `G
 
 ## Rust workspace layout
 
-Planned Cargo workspace (align with [tech-stack.md](../../04-technical/specs/tech-stack.md)):
+**Step 1 slim workspace** (what to create first): [step1-implementation-bootstrap.md](../08-developer/engineering/step1-implementation-bootstrap.md).
+
+Full target workspace (align with [tech-stack.md](../../04-technical/specs/tech-stack.md)):
 
 ```
 pegin/
 ├── Cargo.toml                    # workspace
-├── pegin-domain/                 # shared kernel: IDs, errors, time
-├── pegin-identity/               # bounded context: DID, passkey
-├── pegin-auth/                   # bounded context: login, JWT
-├── pegin-authorization/          # bounded context: PePP (Phase 2)
-├── pegin-audit/                  # bounded context: audit append + anchor
-├── pegin-federation/             # SCIM, bulk merkle (Phase 1–3)
-├── pegin-application/            # use cases wiring contexts (optional facade crate)
-├── pegin-infrastructure/         # Chia, DIG, SQL implementations
-│   ├── chia/
-│   ├── dig/
-│   └── sql/                      # optional feature flag: `sql-index`
-├── pegin-api/                    # Axum: presentation only
-├── pegin-protocols/              # OIDC, SAML, OAuth (presentation + infra glue)
-├── pegin-contracts/              # Rue → CLVM (separate compile pipeline)
+├── crates/
+│   ├── pegin-domain/             # shared kernel: IDs, errors, time
+│   ├── pegin-identity/           # bounded context: DID, passkey
+│   ├── pegin-wallet/             # Step 1: JWT + account use cases (IdP core)
+│   ├── pegin-infrastructure/     # Chia, local profile; DIG/sql later
+│   └── pegin-testing/
+├── apps/mini/                    # Tauri — Step 1
+├── contracts/                    # Rue — Step 2
+├── pegin-auth/                   # optional hosted OIDC — post-MVP
+├── pegin-authorization/          # PePP (Phase 2)
+├── pegin-audit/                  # Phase 2
+├── pegin-federation/             # Phase 1–3
+├── pegin-api/                    # Axum — if needed
+├── pegin-protocols/              # OIDC, SAML — post-MVP
 ├── pegin-cli/
-├── pegin-dashboard/              # TypeScript / Tauri UI
-└── packages/
-    └── sdk/                      # @pegin/sdk
+└── packages/sdk/                 # @pegin/sdk
 ```
 
 **Modularity rules**

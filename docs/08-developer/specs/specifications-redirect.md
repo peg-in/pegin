@@ -1,6 +1,6 @@
-# Moved
+# Redirect: Specifications folder → 04-technical/specs
 
-Specifications are now under **[04-technical/specs/](../../04-technical/specs/README.md)**.
+Specifications are now under **[04-technical/specs/](../../04-technical/specs/specifications-index.md)**.
 
 | Spec | Location |
 |------|----------|

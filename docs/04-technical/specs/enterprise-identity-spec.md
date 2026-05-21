@@ -1,6 +1,6 @@
 # Spec 2 — Enterprise identity (AD / Entra parity)
 
-> **Specs hub:** [../README.md](../README.md) · **Developer hub:** [../../08-developer/README.md](../../08-developer/README.md)  
+> **Specs hub:** [../technical-hub.md](../technical-hub.md) · **Developer hub:** [../../08-developer/developer-documentation.md](../../08-developer/developer-documentation.md)  
 > **Goal:** PEGIN as a decentralized IdP that can **federate with** or **replace** Microsoft Entra ID (Azure AD) for app SSO — standard protocols only (SAML/OIDC apps).  
 > **Plan:** [roadmap.md](../../03-use-cases/roadmap.md) Phase 1 → Phase 3 · **Spec 1:** [tech-stack.md](tech-stack.md)
 

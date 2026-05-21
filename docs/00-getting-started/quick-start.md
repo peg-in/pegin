@@ -6,11 +6,11 @@ Double-click **[wiki/PEGIN_Wiki_Knowledge_Base.html](../wiki/PEGIN_Wiki_Knowledg
 
 ## 2. Build or integrate (developers)
 
-**[08-developer/README.md](../08-developer/README.md)** — Spec 1, SDK, architecture, PePP data model.
+**[08-developer/developer-documentation.md](../08-developer/developer-documentation.md)** — Spec 1, SDK, architecture, PePP data model.
 
 ## 3. Browse by topic (markdown)
 
-Use **[docs/README.md](../README.md)** as the table of contents:
+Use **[docs/README.md](Wiki%20Links.md)** as the table of contents:
 
 | Folder | Topics |
 |--------|--------|
@@ -34,7 +34,7 @@ See **[wiki-setup.md](wiki-setup.md)** for GitHub Pages, Netlify, or MkDocs.
 | Time | Path |
 |------|------|
 | **15 min** | [core-value](../01-vision/core-value-user-owned-login.md) → [sustainable-funding](../05-business/sustainable-funding.md) |
-| **1 hour** | Business leader path in [README](../README.md#reading-paths) |
+| **1 hour** | Business leader path in [Wiki Links](Wiki%20Links.md#reading-paths) |
 | **2–3 hours** | Full deep dive: vision → product → technical → business |
 
 For a single long document, use **[wiki/PEGIN_Wiki.md](../wiki/PEGIN_Wiki.md)**.

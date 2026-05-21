@@ -8,27 +8,28 @@ See also: [mvp-strategy.md](mvp-strategy.md) (POC scope only), [differentiators.
 
 ## Principles
 
-1. **One feature first:** “Login with PEGIN” (passkey → Chia DID → JWT).
+1. **One feature first:** “Login with PEGIN” (passkey → JWT/OIDC) — **blockchain hidden** from user UX; same button for consumers and company SSO.
 2. **Protocols in order:** WebAuthn → OIDC → SAML → OAuth → SCIM → LDAP (enterprise path).
 3. **Permissions after SSO works:** PePP builds on the same DID; do not block POC on PePP.
 4. **Measure before claiming:** Enterprise outcomes require pilot data before external claims.
 
 ---
 
-## Phase 0 — POC (target: ~8 weeks)
+## Phase 0 — MVP (two steps)
 
-**Goal:** Prove passkey login anchored to a Chia DID on testnet.
+**Goal:** Wallet-as-IdP with DID + JWT (Step 1), then vault recovery for multi-device (Step 2). **Not DIG-network-first.**
 
-| Deliverable | Done when |
-|-------------|-----------|
-| `pegin-core` | Register + login via WebAuthn; issue JWT |
-| `pegin-contracts` | DID anchor on testnet (Rue) |
-| `@pegin/sdk` | “Login with PEGIN” on a demo app |
-| OIDC | `/.well-known/openid-configuration` + token endpoint for 1–2 test apps |
+| Step | Deliverable | Done when |
+|------|-------------|-----------|
+| **1** | `pegin-wallet` + `pegin-mini` | DID on testnet; wallet signs JWT |
+| **1** | `@pegin/sdk` | Demo sites receive and verify JWT |
+| **1** | Passkey + faucet | Signup ~3s; login &lt; 1s |
+| **2** | Vault (upstream `VaultInfo`/Rue) | DID recoverable on new device |
+| **2** | Seed + passkey recovery | Seed in settings; passkey re-bind after recovery |
 
-**Out of scope:** SAML, SCIM, admin dashboard, PePP, production SLA, billing.
+**Out of scope for Phase 0:** DIG app-layer stores, email guardian, Chia Signer recovery, SAML, SCIM, PePP.
 
-**Success criteria:** Register &lt; 5s, login &lt; 1s, Chrome/Safari/Firefox, no passwords in user flow.
+**Success criteria:** [mvp-strategy.md](mvp-strategy.md).
 
 ---
 

@@ -1,4 +1,4 @@
-# PEGIN documentation
+# Documentation
 
 PEGIN (Penguin Gateway Identity) is decentralized SSO on Chia + DIG.
 
@@ -59,7 +59,6 @@ Hub pages use **descriptive filenames** (not `README.md`) so Obsidian, search, a
 | Write code | [08-developer/developer-documentation.md](08-developer/developer-documentation.md) |
 | Spec 1 / Spec 2 | [04-technical/specs/](04-technical/specs/specifications-index.md) |
 | POC scope | [mvp-strategy.md](03-use-cases/mvp-strategy.md) |
-| Mini wallet (POC) | [mini-wallet-and-recovery-vault.md](10-architecture/mini-wallet-and-recovery-vault.md) |
 
 ---
 

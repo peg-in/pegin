@@ -98,7 +98,7 @@ These are **PEGIN’s** commitments. They stay stable across roadmap phases; fea
 | # | Principle | Meaning |
 |---|-----------|---------|
 | P1 | **User-owned root** | DID in user device; employer adds revocable permission |
-| P2 | **Passkey-first** | No passwords, no seed phrases in the default UX |
+| P2 | **Passkey-first, chain-invisible** | **One button**, no redirect, instant if session valid; no crypto/PEGIN noise; one-tap Face ID if expired |
 | P3 | **Protocol over company** | PEGIN is infrastructure, not a rent-seeking directory |
 | P4 | **Open core** | Source forkable; survival does not require one vendor |
 | P5 | **Decentralized data** | Profiles, grants, audit on **DIG** — not one hidden Postgres |
@@ -110,7 +110,7 @@ These are **PEGIN’s** commitments. They stay stable across roadmap phases; fea
 |---|-----------|---------|
 | P7 | **Capabilities, not role soup** | Time-bound, app-scoped grants (PePP) vs hundreds of AD groups |
 | P8 | **Revoke that sticks** | Update DIG; apps deny on next check — prove in offboarding drills |
-| P9 | **Standards when enterprises need them** | OIDC, SAML, SCIM — phased; see [roadmap.md](../03-use-cases/roadmap.md) |
+| P9 | **Standards when enterprises need them** | OIDC, SAML, SCIM — companies integrate like any IdP; users still see only passkey login |
 
 ### Business & ecosystem
 
@@ -183,7 +183,7 @@ Inspired by [*Rework*](https://37signals.com/books/rework) (Fried & Heinemeier H
 | B5 | **Lean toolchain** | Paid SaaS: GitHub + Basecamp only; OSS elsewhere; host on DIG (Hetzner for early POC); Podman/Docker dev when code lands |
 | B6 | **Build verifiably** | Tests, audit trails, crypto review; AI and cloud tools follow [ai-coding-tools.md](../08-developer/environment/ai-coding-tools.md) — no trust leaks via prompts |
 
-Layer III: [09-how-we-work/](../09-how-we-work/README.md) · Layer IV (code): [infrastructure-and-tooling-principles.md](../08-developer/environment/infrastructure-and-tooling-principles.md) · [developer-environment.md](../08-developer/environment/developer-environment.md) · [linting-and-formatting.md](../08-developer/engineering/linting-and-formatting.md) · [test-architecture.md](../08-developer/engineering/test-architecture.md).
+Layer III: [09-how-we-work/](../09-how-we-work/team-how-we-work.md) · Layer IV (code): [infrastructure-and-tooling-principles.md](../08-developer/environment/infrastructure-and-tooling-principles.md) · [developer-environment.md](../08-developer/environment/developer-environment.md) · [linting-and-formatting.md](../08-developer/engineering/linting-and-formatting.md) · [test-architecture.md](../08-developer/engineering/test-architecture.md).
 
 ---
 
@@ -256,9 +256,9 @@ If (0) or (1) is unclear, stop.
 | Everyone | This manifest |
 | Users & buyers | [core-value-user-owned-login.md](core-value-user-owned-login.md) |
 | Enterprise / EU | [competitive-moat.md](../05-business/competitive-moat.md) |
-| Everyone (culture) | [09-how-we-work/README.md](../09-how-we-work/README.md) |
-| Everyone (system) | [10-architecture/README.md](../10-architecture/README.md) |
-| Programmers | [08-developer/README.md](../08-developer/README.md) · [04-technical/specs/](../04-technical/specs/README.md) |
+| Everyone (culture) | [09-how-we-work/team-how-we-work.md](../09-how-we-work/team-how-we-work.md) |
+| Everyone (system) | [10-architecture/architecture-overview.md](../10-architecture/architecture-overview.md) |
+| Programmers | [08-developer/developer-documentation.md](../08-developer/developer-documentation.md) · [04-technical/specs/](../04-technical/specs/specifications-index.md) |
 | Business depth | [business-principles.md](business-principles.md) · [sustainable-funding.md](../05-business/sustainable-funding.md) |
 | Full narrative wiki | [PEGIN_Wiki.md](../wiki/PEGIN_Wiki.md) |
 

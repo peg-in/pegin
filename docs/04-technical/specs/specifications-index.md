@@ -8,4 +8,4 @@ Implementation specs for PEGIN engineers. Read **Spec 1** before writing code; r
 | 1 | [tech-stack.md](tech-stack.md) | **Spec 1** — Chia, xch-dev, Rue, DIG, POC crates, official links |
 | 2 | [enterprise-identity-spec.md](enterprise-identity-spec.md) | **Spec 2** — OIDC, SAML, SCIM, LDAP, Entra; explicit v1 boundaries |
 
-**Specs hub:** [../README.md](../README.md) · **Developer hub:** [../../08-developer/README.md](../../08-developer/README.md) · **Next:** [../../08-developer/integration/sdk-guide.md](../../08-developer/integration/sdk-guide.md)
+**Specs hub:** [../technical-hub.md](../technical-hub.md) · **Developer hub:** [../../08-developer/developer-documentation.md](../../08-developer/developer-documentation.md) · **Next:** [../../08-developer/integration/sdk-guide.md](../../08-developer/integration/sdk-guide.md)

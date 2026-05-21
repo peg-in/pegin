@@ -5,6 +5,7 @@ Integrate **Login with PEGIN** in your application.
 | Document | Contents |
 |----------|----------|
 | [sdk-guide.md](sdk-guide.md) | WebAuthn flow, JWT, OIDC endpoints, React/Express examples, DIG queries |
+| [existing-apps-and-sso-protocols.md](existing-apps-and-sso-protocols.md) | Existing user DB, OIDC/SAML/OAuth, token expiry |
 
 **Before integrating**
 
