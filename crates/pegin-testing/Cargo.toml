@@ -1,0 +1,10 @@
+[package]
+name    = "pegin-testing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+pegin-domain = { workspace = true }
+chia-sdk-test = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }

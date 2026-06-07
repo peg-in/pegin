@@ -1,0 +1,60 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/pegin-domain",
+    "crates/pegin-identity",
+    "crates/pegin-wallet",
+    "crates/pegin-infrastructure",
+    "crates/pegin-testing",
+]
+
+[workspace.dependencies]
+# ── Chia Blockchain (xch-dev + Chia-Network) ─────────────────────────────────
+chia-wallet-sdk = "0.23"
+chia-protocol    = "0.25"
+chia-bls         = "0.14"
+clvm-traits      = "0.14"
+chia-sdk-test    = "0.26"
+
+# ── Backend framework (Loco) ──────────────────────────────────────────────────
+loco-rs = { version = "0.16", features = ["with-db"] }
+
+# ── Database (PostgreSQL) ─────────────────────────────────────────────────────
+sea-orm           = { version = "1.1", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
+sea-orm-migration = { version = "1.1", features = ["sqlx-postgres"] }
+sqlx              = { version = "0.8",  features = ["postgres", "runtime-tokio-rustls", "uuid", "chrono", "macros"] }
+
+# ── Authentication ────────────────────────────────────────────────────────────
+passkey        = "0.3"
+openidconnect  = "4.0"
+oauth2         = "5.0"
+samael         = "0.0.17"
+jsonwebtoken   = "9.3"
+
+# ── Crypto ───────────────────────────────────────────────────────────────────
+sha2              = "0.10"
+chacha20poly1305  = "0.10"
+rand              = "0.8"
+
+# ── Async runtime ─────────────────────────────────────────────────────────────
+# axum is a transitive dep via loco-rs — do not add directly
+tokio = { version = "1.40", features = ["full"] }
+
+# ── Serialization ─────────────────────────────────────────────────────────────
+serde      = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+quick-xml  = "0.37"
+uuid       = { version = "1.11", features = ["v4"] }
+chrono     = { version = "0.4",  features = ["serde"] }
+
+# ── Storage ───────────────────────────────────────────────────────────────────
+rocksdb = "0.22"
+
+# ── WASM bridge (pegin-wasm crate only) ──────────────────────────────────────
+wasm-bindgen = "0.2"
+
+# ── Workspace-internal crates ─────────────────────────────────────────────────
+pegin-domain = { path = "crates/pegin-domain" }
+pegin-identity = { path = "crates/pegin-identity" }
+pegin-wallet = { path = "crates/pegin-wallet" }
+pegin-testing = { path = "crates/pegin-testing" }

@@ -52,4 +52,43 @@ Also: [CLAUDE.md](CLAUDE.md) · [llms.txt](llms.txt)
 | [docs/03-use-cases/](docs/03-use-cases/) | Roadmap, MVP |
 | [docs/05-business/](docs/05-business/) | Business plans |
 
+---
+
+## Prerequisites
+
+Install these tools before working on the project:
+
+| Tool | Version | Install |
+|------|---------|---------|
+| **Rust** | stable (≥ 1.80) | `curl https://sh.rustup.rs -sSf \| sh` |
+| **Node.js** | 26.2.0 (pinned in `.nvmrc`) | [nvm](https://github.com/nvm-sh/nvm) or [mise](https://mise.jdx.dev/) |
+| **pnpm** | ≥ 9 | `npm install -g pnpm` |
+| **Tauri system deps** | — | [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) (Linux: `libgtk`, `libwebkit2gtk`, etc.) |
+
+> **Node version:** run `nvm use` (or `mise use`) at the repo root to switch to the pinned version automatically.
+
+---
+
+## Getting started
+
+```bash
+# 1. Clone with submodules (docs)
+git clone --recurse-submodules https://github.com/peg-in/pegin.git
+cd pegin
+
+# 2. Switch to the pinned Node version
+nvm use        # or: mise use
+
+# 3. Install TypeScript dependencies
+pnpm install
+
+# 4. Build Rust workspace
+cargo build --workspace
+
+# 5. Build TypeScript packages and apps
+pnpm build
+```
+
+---
+
 Built with 🐧 — *Waddle in, authenticated out.*
