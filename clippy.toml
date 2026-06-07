@@ -1,0 +1,10 @@
+# Minimum supported Rust version — clippy uses this to avoid suggesting APIs newer than this.
+msrv = "1.80"
+
+# Flag functions where the cyclomatic complexity exceeds this threshold.
+cognitive-complexity-threshold = 20
+
+# Allow unwrap()/expect() inside #[cfg(test)] blocks and pegin-testing crate
+# even when clippy::unwrap_used / clippy::expect_used are enabled.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true

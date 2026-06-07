@@ -3,6 +3,9 @@ name    = "pegin-infrastructure"
 version = "0.1.0"
 edition = "2021"
 
+[lints]
+workspace = true
+
 [dependencies]
 pegin-domain    = { workspace = true }
 pegin-identity  = { workspace = true }

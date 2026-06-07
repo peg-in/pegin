@@ -8,6 +8,32 @@ members = [
     "crates/pegin-testing",
 ]
 
+# ── Workspace-wide lint configuration ────────────────────────────────────────
+# Each crate opts in with `[lints] workspace = true` in its own Cargo.toml.
+# Ref: docs/pegin-wiki/08-developer/engineering/linting-and-formatting.md
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+# Enable the full pedantic group at warn level (priority = -1 so individual
+# overrides below — at the default priority 0 — take precedence).
+pedantic = { level = "warn", priority = -1 }
+
+# ── Pedantic suppressions — revisit when crates have real implementations ─────
+# Stub functions and trait definitions don't need #[must_use].
+must_use_candidate = "allow"
+# Doc `# Errors` sections deferred until feat-7+ when APIs are finalised.
+missing_errors_doc = "allow"
+
+# ── Safety lints ──────────────────────────────────────────────────────────────
+# unwrap() in production code is always a hard error.
+# (allow-unwrap-in-tests = true in clippy.toml exempts #[cfg(test)] blocks.)
+unwrap_used = "deny"
+# expect() still produces a useful panic message but should still be avoided
+# in production paths; escalated to deny by `-- -D warnings` in CI / pre-commit.
+expect_used = "warn"
+
 [workspace.dependencies]
 # ── Chia Blockchain (xch-dev + Chia-Network) ─────────────────────────────────
 chia-wallet-sdk = "0.23"

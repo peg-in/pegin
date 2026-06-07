@@ -36,16 +36,58 @@ pegin/
 
 ```bash
 # Rust
-cargo build --workspace        # build all Step 1 crates
-cargo test --workspace         # run all tests
+cargo build --workspace          # build all Step 1 crates
+cargo test --workspace           # run all tests
+cargo fmt --all                  # format all Rust code
+cargo fmt --all -- --check       # check formatting (used in pre-commit)
+cargo clippy --workspace --all-targets -- -D warnings  # lint (used in pre-commit)
 
 # TypeScript
-pnpm install                   # install all packages
-pnpm build                     # build all packages and apps
+pnpm install                     # install all packages
+pnpm build                       # build all packages and apps
 
 # Tauri (apps/mini)
-pnpm --filter @pegin/mini dev  # launch desktop dev mode
+pnpm --filter @pegin/mini dev    # launch desktop dev mode
 ```
+
+## Pre-commit hooks (Rust quality gates)
+
+The repo uses [pre-commit](https://pre-commit.com/) to enforce `rustfmt` and `clippy` before every commit.
+
+**Install once after cloning:**
+
+```bash
+pip install pre-commit   # or: pipx install pre-commit
+pre-commit install
+```
+
+**What the hooks run:**
+
+| Hook | Command | Blocks commit on |
+|------|---------|-----------------|
+| `cargo-fmt` | `cargo fmt --all -- --check` | Non-standard formatting |
+| `cargo-clippy` | `cargo clippy --workspace --all-targets -- -D warnings` | Any clippy warning or error |
+
+**Run manually against all files:**
+
+```bash
+pre-commit run --all-files
+```
+
+**Lint config files:**
+
+| File | Purpose |
+|------|---------|
+| `rustfmt.toml` | Line width (100), edition, newline style |
+| `clippy.toml` | MSRV (1.80), complexity threshold, allow unwrap/expect in tests |
+| `Cargo.toml [workspace.lints]` | Lint levels: `unsafe_code = deny`, `unwrap_used = deny`, `pedantic = warn` |
+| `.cargo/config.toml` | `rustflags = ["-D", "warnings"]` — treats rustc warnings as errors |
+
+**Rules:**
+
+- `unwrap()` in production code is **always a hard error** (clippy `unwrap_used = deny`).  
+  Test code (`#[cfg(test)]` and `pegin-testing`) is exempt via `allow-unwrap-in-tests = true` in `clippy.toml`.
+- `#[allow(clippy::...)]` suppressions must include a comment explaining why.
 
 ## Dependency pins
 
