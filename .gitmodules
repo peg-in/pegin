@@ -1,3 +1,9 @@
 [submodule "docs/wiki"]
 	path = docs/wiki
 	url = git@github.com:maximedogawa/pegin-wiki.git
+[submodule "docs/pegin-issues"]
+	path = docs/pegin-issues
+	url = git@github.com:maximedogawa/pegin-issues.git
+[submodule "docs/pegin-wiki"]
+	path = docs/pegin-wiki
+	url = git@github.com:maximedogawa/pegin-wiki.git
