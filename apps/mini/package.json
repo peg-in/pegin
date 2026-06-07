@@ -1,0 +1,20 @@
+{
+  "name": "@pegin/mini",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PEGIN desktop app — Tauri v2 shell (empty skeleton)",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "echo 'mini: Tauri skeleton — src-tauri/ scaffold added in feat-5'",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0"
+  }
+}

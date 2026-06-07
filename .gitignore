@@ -68,9 +68,14 @@ out/
 .turbo/
 *.tsbuildinfo
 
-# Rust (planned workspace)
+# Rust workspace
 /target/
 **/*.rs.bk
+
+# WASM build artifacts
+*.wasm
+pkg/
+wasm/
 
 # IDE & editors
 .idea/
