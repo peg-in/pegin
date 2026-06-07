@@ -52,8 +52,21 @@ pnpm --filter @pegin/mini dev  # launch desktop dev mode
 All Rust workspace dependencies are pinned in the root `Cargo.toml [workspace.dependencies]`.
 TypeScript packages use pnpm workspace protocol (`workspace:*`) for cross-package refs.
 
+## Structural principles
+
+Before adding any file, crate, or package, read:
+
+**`docs/pegin-wiki/10-architecture/project-structure-principles.md`**
+
+It defines:
+- **DDD** — which Rust crate code belongs to, dependency direction table, compiler-enforced rules
+- **FSD** — TypeScript layer hierarchy, folder layouts for `packages/sdk` / `apps/mini` / `apps/demo-web`, five isolation rules
+- **DOD** — flat structs vs nested option soup, normalized stores, pure selectors
+- Checklist for new modules and code review structural gates
+
 ## Documentation
 
-- Architecture: `docs/pegin-wiki/10-architecture/`
-- Tech stack: `docs/pegin-wiki/04-technical/specs/tech-stack.md`
+- Architecture overview: `docs/pegin-wiki/10-architecture/architecture-overview.md`
+- Structure principles: `docs/pegin-wiki/10-architecture/project-structure-principles.md`
+- Tech stack + dep pins: `docs/pegin-wiki/04-technical/specs/tech-stack.md`
 - Issues / tickets: `docs/pegin-issues/issues/`
