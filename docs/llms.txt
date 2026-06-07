@@ -1,3 +1,0 @@
-# See repo root llms.txt
-
-The canonical [llms.txt](https://llmstxt.org/) file is at the repository root: [../llms.txt](../llms.txt).
