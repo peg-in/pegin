@@ -1,0 +1,105 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+.cursor
+.obsidian
+.claude
+.claudian
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+
+# Node / TypeScript (planned SDK)
+node_modules/
+.npm
+.yarn/
+.pnp.*
+dist/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# Rust (planned workspace)
+/target/
+**/*.rs.bk
+
+# IDE & editors
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# VS Code / Cursor (keep shared settings if you commit .vscode/)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.cursor/
+
+# Obsidian (local vault UI state)
+.obsidian/
+
+# Logs & temp
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# OS / editor backups
+*.bak
+*.tmp
+*~
