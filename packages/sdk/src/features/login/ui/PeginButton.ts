@@ -1,6 +1,8 @@
+import type { PeginSession } from "../../../entities/session/index.js";
+
 export interface PeginButtonOptions {
   rpId: string;
-  onSuccess: (jwt: string) => void;
+  onSuccess: (session: PeginSession) => void;
   onError: (err: Error) => void;
 }
 
