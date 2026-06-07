@@ -1,0 +1,21 @@
+# Pre-commit hook configuration — Rust quality gates.
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+# Ref: docs/pegin-wiki/08-developer/engineering/linting-and-formatting.md
+
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: "Rust: cargo fmt --check"
+        language: system
+        entry: cargo fmt --all -- --check
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: "Rust: cargo clippy -D warnings"
+        language: system
+        entry: cargo clippy --workspace --all-targets -- -D warnings
+        types: [rust]
+        pass_filenames: false

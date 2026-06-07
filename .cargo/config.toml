@@ -1,0 +1,5 @@
+[build]
+# Treat all rustc warnings as errors during local builds.
+# Cargo automatically adds --cap-lints=allow for external dependencies,
+# so this only affects workspace crates, not compiled deps.
+rustflags = ["-D", "warnings"]
