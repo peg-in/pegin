@@ -1,4 +1,4 @@
-# Pre-commit hook configuration — Rust quality gates.
+# Pre-commit hook configuration — Rust and TypeScript quality gates.
 # Install: pip install pre-commit && pre-commit install
 # Run manually: pre-commit run --all-files
 # Ref: docs/pegin-wiki/08-developer/engineering/linting-and-formatting.md
@@ -19,3 +19,17 @@ repos:
         entry: cargo clippy --workspace --all-targets -- -D warnings
         types: [rust]
         pass_filenames: false
+
+      - id: prettier-check
+        name: "TS: prettier --check"
+        language: system
+        entry: pnpm exec prettier --check
+        files: '\.(ts|tsx)$'
+        pass_filenames: true
+
+      - id: eslint
+        name: "TS: eslint"
+        language: system
+        entry: pnpm exec eslint
+        files: '\.(ts|tsx)$'
+        pass_filenames: true

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "echo 'mini: Tauri skeleton — src-tauri/ scaffold added in feat-5'",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "lint": "eslint src"
   },
   "dependencies": {
     "react": "^19.0.0",
