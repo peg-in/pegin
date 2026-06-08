@@ -1,7 +1,6 @@
-// Test harness: chia-sdk-test simulator helpers and domain fixtures.
-// This crate is a dev-dependency — never import it in production code.
+pub mod modules;
 
-pub mod did_factory;
-pub mod fixtures;
-pub mod harness;
-pub mod mock_passkey;
+pub use modules::harness::helper::{create_did, DidInfo};
+pub use modules::harness::mock_passkey::MockPasskeyVerifier;
+pub use modules::harness::service::TestHarness;
+pub use pegin_infrastructure::modules::chia::repository::SimulatorGateway;

@@ -32,6 +32,48 @@ pegin/
 - `pegin-infrastructure` depends on `pegin-domain` + `pegin-identity`; holds all external I/O.
 - `pegin-testing` is **dev-dependency only** — never import from production crates.
 
+## Module structure (within every crate and package)
+
+Every Rust crate and TypeScript package uses the same internal folder layout:
+
+```
+src/
+├── shared/          # only code used by 2+ modules — if one module needs it, keep it there
+└── modules/
+    └── <name>/
+        ├── mod.rs           (Rust) / index.ts (TS)  — declares submodules, re-exports public surface only
+        ├── <name>.service.rs/ts    — business logic and use cases
+        ├── <name>.repository.rs/ts — data access (storage, network, external APIs)
+        ├── <name>.controller.rs/ts — entry points for HTTP / Tauri IPC (only where applicable)
+        ├── <name>.helper.rs/ts     — pure functions local to this module
+        ├── <name>.dto.rs/ts               — types that cross the module boundary (commands, responses)
+        └── <name>.entities.rs/ts          — domain types that live inside this module
+```
+
+**Rules:**
+
+- `shared/` only for things used by two or more modules. One user → stays in that module.
+- Modules never import from sibling modules directly. Go through their public entry point.
+- Not every file is required — a small module may only have `mod.rs`, `entities.rs`, and `<name>.service.rs`.
+- `dto.rs` = types the caller passes in or receives back. `entities.rs` = types internal to the module.
+- Controllers only exist in crates/packages that handle external requests (HTTP, Tauri IPC).
+
+**Rust `shared/` folder contents:**
+
+| File | What goes there |
+|------|----------------|
+| `shared/error.rs` | Cross-module error types |
+| `shared/types.rs` | Newtypes or enums referenced by multiple modules |
+| `shared/helpers.rs` | Pure utility functions used across modules |
+
+**TypeScript `shared/` folder contents:**
+
+| Folder | What goes there |
+|--------|----------------|
+| `shared/types/` | TypeScript interfaces / types used by multiple modules |
+| `shared/lib/` | Pure helper functions (no domain knowledge, no side effects) |
+| `shared/api/` | Typed HTTP / WebSocket client wrappers |
+
 ## Key commands
 
 ```bash

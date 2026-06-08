@@ -7,6 +7,7 @@
   "scripts": {
     "build": "cargo build --workspace && pnpm -r build",
     "test": "cargo test --workspace && pnpm -r test",
+    "test:live": "cargo test --workspace -- --include-ignored",
     "dev": "pnpm -r dev",
     "typecheck": "pnpm -r typecheck",
     "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm -r lint",
