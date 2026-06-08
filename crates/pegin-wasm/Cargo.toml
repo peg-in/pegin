@@ -1,0 +1,31 @@
+[package]
+name    = "pegin-wasm"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+chia-bls             = { workspace = true }
+chia-protocol        = { workspace = true }
+chia-traits          = { workspace = true }
+wasm-bindgen         = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+js-sys               = { workspace = true }
+gloo-net             = { workspace = true }
+bip39                = { workspace = true }
+serde                = { workspace = true }
+serde_json           = { workspace = true }
+hex                  = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+
+# getrandom and uuid need JS features to access browser crypto on wasm32-unknown-unknown.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }
+uuid      = { version = "1",   features = ["v4", "js"] }

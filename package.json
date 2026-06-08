@@ -5,7 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "build": "cargo build --workspace && pnpm -r build",
+    "build:wasm": "wasm-pack build crates/pegin-wasm --target bundler --out-dir ../../packages/sdk/wasm",
+    "build": "pnpm build:wasm && cargo build --workspace && pnpm -r build",
     "test": "cargo test --workspace && pnpm -r test",
     "test:live": "cargo test --workspace -- --include-ignored",
     "dev": "pnpm -r dev",
