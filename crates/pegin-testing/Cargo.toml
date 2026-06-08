@@ -18,4 +18,5 @@ serde_json           = { workspace = true }
 [dev-dependencies]
 chia-wallet-sdk = { workspace = true }
 chia-bls        = { workspace = true }
+hex-literal     = { workspace = true }
 tokio           = { workspace = true }

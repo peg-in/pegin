@@ -2204,6 +2204,7 @@ dependencies = [
  "chia-protocol 0.25.0",
  "chia-sdk-test 0.26.0",
  "chia-wallet-sdk",
+ "hex-literal",
  "pegin-domain",
  "pegin-identity",
  "pegin-infrastructure",

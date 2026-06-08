@@ -48,10 +48,22 @@ async fn submit_transaction_wraps_simulator_error_in_app_error() {
 #[tokio::test]
 #[ignore = "requires live coinset.org connection"]
 async fn coinset_gateway_reads_known_testnet_coin() {
+    use hex_literal::hex;
     use pegin_infrastructure::chia::coinset::CoinsetGateway;
 
+    // Reward coin confirmed at testnet11 block 4242678, amount 1.75 XCH, unspent.
+    let coin_id = Bytes32::from(hex!(
+        "0827b6f235843af417ded1ebc5c2720403ccffd432e6c8f0a599f684aff16ae2"
+    ));
+
     let gw = CoinsetGateway::testnet11();
-    // Replace with a real testnet11 coin id to validate live connectivity.
-    let coin_id = Bytes32::from([0u8; 32]);
-    let _ = gw.get_coin_state(coin_id).await;
+    let state = gw
+        .get_coin_state(coin_id)
+        .await
+        .expect("known testnet11 coin should be found");
+
+    assert_eq!(state.coin.coin_id(), coin_id);
+    assert_eq!(state.coin.amount, 1_750_000_000_000);
+    assert_eq!(state.created_height, Some(4_242_678));
+    assert!(state.spent_height.is_none(), "coin should still be unspent");
 }
