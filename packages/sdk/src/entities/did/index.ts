@@ -1,2 +1,2 @@
-export type { ChiaDid } from "./model.js";
-export { isChiaDid, launcherIdFromDid, didFromLauncherId } from "./model.js";
+export type { ChiaDid } from './model.js'
+export { isChiaDid, launcherIdFromDid, didFromLauncherId } from './model.js'

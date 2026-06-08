@@ -1,9 +1,7 @@
 use chia_sdk_test::{BlsPairWithCoin, Simulator};
 
 /// In-process test environment: a funded BLS wallet on a fresh simulator.
-///
-/// Each `TestHarness::new()` call creates an isolated instance — tests running
-/// in parallel cannot share state.
+/// Each `TestHarness::new()` call creates an isolated instance — tests running in parallel cannot share state.
 #[derive(Debug)]
 pub struct TestHarness {
     pub sim: Simulator,
