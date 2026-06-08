@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use pegin_domain::{did::Did, error::AppError};
-use pegin_identity::authenticator::PasskeyAuthenticator;
+use pegin_identity::modules::identity::service::PasskeyAuthenticator;
 
 /// Implements [`PasskeyAuthenticator`] without any real `WebAuthn` ceremony.
 ///

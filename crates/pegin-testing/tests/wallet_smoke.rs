@@ -1,6 +1,9 @@
 use pegin_domain::did::Did;
-use pegin_identity::authenticator::PasskeyAuthenticator;
-use pegin_testing::{did_factory, harness::TestHarness, mock_passkey::MockPasskeyVerifier};
+use pegin_identity::modules::identity::service::PasskeyAuthenticator;
+use pegin_testing::{
+    modules::harness::{helper::create_did, service::TestHarness},
+    MockPasskeyVerifier,
+};
 use serde::Deserialize;
 
 // ---------------------------------------------------------------------------
@@ -35,7 +38,7 @@ fn harness_boots_with_funded_wallet() {
 #[test]
 fn did_factory_creates_did_on_simulator() {
     let mut harness = TestHarness::new();
-    let info = did_factory::create_did(&mut harness, "alice");
+    let info = create_did(&mut harness, "alice");
 
     assert!(info.did.as_str().starts_with("did:chia:"));
     // launcher_id is 32 bytes → 64 hex chars

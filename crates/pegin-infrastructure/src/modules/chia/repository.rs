@@ -1,21 +1,29 @@
+#[cfg(feature = "test-utils")]
 use std::sync::{Arc, Mutex};
 
+#[cfg(feature = "test-utils")]
 use chia_protocol::{Bytes32, CoinSpend, CoinState, SpendBundle};
+#[cfg(feature = "test-utils")]
 use chia_sdk_test::Simulator;
+#[cfg(feature = "test-utils")]
 use pegin_domain::error::AppError;
 
-use super::gateway::ChiaGateway;
+#[cfg(feature = "test-utils")]
+use super::service::ChiaGateway;
 
+#[cfg(feature = "test-utils")]
 pub struct SimulatorGateway {
     sim: Arc<Mutex<Simulator>>,
 }
 
+#[cfg(feature = "test-utils")]
 impl SimulatorGateway {
     pub fn new(sim: Arc<Mutex<Simulator>>) -> Self {
         Self { sim }
     }
 }
 
+#[cfg(feature = "test-utils")]
 impl ChiaGateway for SimulatorGateway {
     async fn get_coin_state(&self, coin_id: Bytes32) -> Result<CoinState, AppError> {
         let sim = self

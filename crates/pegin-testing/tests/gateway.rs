@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use chia_protocol::Bytes32;
 use chia_sdk_test::Simulator;
 use pegin_domain::error::AppError;
-use pegin_infrastructure::chia::gateway::ChiaGateway;
+use pegin_infrastructure::modules::chia::service::ChiaGateway;
 use pegin_testing::SimulatorGateway;
 
 fn gateway() -> (SimulatorGateway, Simulator) {

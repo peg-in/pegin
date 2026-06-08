@@ -1,5 +1,5 @@
 use pegin_domain::{did::Did, error::AppError, identity::Username};
-use pegin_identity::store::IdentityStore;
+use pegin_identity::modules::identity::service::IdentityStore;
 
 pub struct LocalProfileStore;
 

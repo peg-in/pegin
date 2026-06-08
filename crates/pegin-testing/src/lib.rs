@@ -1,6 +1,5 @@
-pub mod did_factory;
-pub mod fixtures;
-pub mod harness;
-pub mod mock_passkey;
+pub mod modules;
 
-pub use pegin_infrastructure::chia::simulator::SimulatorGateway;
+pub use modules::harness::mock_passkey::MockPasskeyVerifier;
+pub use modules::harness::service::TestHarness;
+pub use pegin_infrastructure::modules::chia::repository::SimulatorGateway;

@@ -1,11 +1,23 @@
 use std::env;
 
-use chia_protocol::{Bytes32, Coin, CoinSpend, CoinState, SpendBundle};
+use chia_protocol::{Bytes32, CoinSpend, CoinState, SpendBundle};
 use pegin_domain::error::AppError;
 use reqwest::Client;
 use serde::Deserialize;
 
-use super::gateway::ChiaGateway;
+use super::entities::{CoinRecordResponse, PushTxResponse, PuzzleAndSolutionResponse};
+
+// Internal trait — only used within this workspace, so `Send` bound on the Future is not needed.
+#[allow(async_fn_in_trait)]
+pub trait ChiaGateway {
+    async fn get_coin_state(&self, coin_id: Bytes32) -> Result<CoinState, AppError>;
+    async fn submit_transaction(&self, bundle: SpendBundle) -> Result<(), AppError>;
+    async fn get_puzzle_and_solution(
+        &self,
+        coin_id: Bytes32,
+        height: Option<u32>,
+    ) -> Result<CoinSpend, AppError>;
+}
 
 const TESTNET11_URL: &str = "https://testnet11.api.coinset.org";
 const MAINNET_URL: &str = "https://api.coinset.org";
@@ -53,38 +65,6 @@ impl CoinsetGateway {
             .map_err(|e| AppError::Infrastructure(e.to_string()))
     }
 }
-
-// ── JSON response types ───────────────────────────────────────────────────────
-
-#[derive(Deserialize)]
-struct CoinRecordResponse {
-    coin_record: Option<CoinRecordJson>,
-    success: bool,
-    error: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct CoinRecordJson {
-    coin: Coin,
-    confirmed_block_index: u32,
-    spent: bool,
-    spent_block_index: u32,
-}
-
-#[derive(Deserialize)]
-struct PuzzleAndSolutionResponse {
-    coin_solution: Option<CoinSpend>,
-    success: bool,
-    error: Option<String>,
-}
-
-#[derive(Deserialize)]
-struct PushTxResponse {
-    success: bool,
-    error: Option<String>,
-}
-
-// ── ChiaGateway impl ──────────────────────────────────────────────────────────
 
 impl ChiaGateway for CoinsetGateway {
     async fn get_coin_state(&self, coin_id: Bytes32) -> Result<CoinState, AppError> {

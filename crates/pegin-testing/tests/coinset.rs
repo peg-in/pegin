@@ -1,6 +1,6 @@
 use chia_protocol::Bytes32;
 use hex_literal::hex;
-use pegin_infrastructure::chia::{coinset::CoinsetGateway, gateway::ChiaGateway};
+use pegin_infrastructure::modules::chia::service::{ChiaGateway, CoinsetGateway};
 
 /// Requires a live coinset.org connection — run manually with `cargo test -- --ignored`.
 ///

@@ -46,8 +46,8 @@ src/
         ├── <name>.repository.rs/ts — data access (storage, network, external APIs)
         ├── <name>.controller.rs/ts — entry points for HTTP / Tauri IPC (only where applicable)
         ├── <name>.helper.rs/ts     — pure functions local to this module
-        ├── dto.rs/ts               — types that cross the module boundary (commands, responses)
-        └── entities.rs/ts          — domain types that live inside this module
+        ├── <name>.dto.rs/ts               — types that cross the module boundary (commands, responses)
+        └── <name>.entities.rs/ts          — domain types that live inside this module
 ```
 
 **Rules:**
