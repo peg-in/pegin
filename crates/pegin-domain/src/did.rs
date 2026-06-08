@@ -7,10 +7,6 @@ use crate::error::DomainError;
 const DID_PREFIX: &str = "did:chia:";
 const LAUNCHER_HEX_LEN: usize = 64;
 
-/// Validated `did:chia:<64-hex-char-launcher-id>` identifier.
-///
-/// Construction always goes through `TryFrom` — a value of this type is
-/// guaranteed to be well-formed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Did(String);
 

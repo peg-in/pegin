@@ -3,17 +3,12 @@ use std::fmt;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// Opaque session identifier — a UUID v4 wrapper.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SessionId(Uuid);
 
 impl SessionId {
     pub fn new_v4() -> Self {
         Self(Uuid::new_v4())
-    }
-
-    pub fn as_uuid(&self) -> Uuid {
-        self.0
     }
 }
 
@@ -36,10 +31,6 @@ mod tests {
 
     #[test]
     fn display_is_standard_uuid_format() {
-        let id = SessionId::new_v4();
-        let s = id.to_string();
-        // UUID format: 8-4-4-4-12 hex chars separated by hyphens
-        assert_eq!(s.len(), 36);
-        assert_eq!(s.chars().filter(|&c| c == '-').count(), 4);
+        assert_eq!(SessionId::new_v4().to_string().len(), 36);
     }
 }

@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::DomainError;
 
-/// Validated PEGIN username: 3–32 lowercase alphanumeric chars or `_`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Username(String);
 

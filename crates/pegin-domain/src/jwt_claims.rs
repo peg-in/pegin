@@ -1,20 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-/// OIDC-compatible claims embedded in a PEGIN session JWT.
-///
-/// Field names match the OIDC standard so the token is readable by
-/// spec-compliant relying parties without custom claim mapping.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct JwtClaims {
-    /// Subject — the user's DID string (`did:chia:<launcher_id>`).
     pub sub: String,
-    /// Human-readable display name.
     pub preferred_username: String,
-    /// Audience — the relying party's `client_id` or origin.
     pub aud: String,
-    /// Issued-at (Unix timestamp, seconds).
     pub iat: i64,
-    /// Expiry (Unix timestamp, seconds).
     pub exp: i64,
 }
 
