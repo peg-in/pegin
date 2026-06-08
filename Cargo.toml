@@ -17,28 +17,21 @@ unsafe_code = "deny"
 
 [workspace.lints.clippy]
 # Enable the full pedantic group at warn level (priority = -1 so individual
-# overrides below — at the default priority 0 — take precedence).
 pedantic = { level = "warn", priority = -1 }
 
 # ── Pedantic suppressions — revisit when crates have real implementations ─────
-# Stub functions and trait definitions don't need #[must_use].
 must_use_candidate = "allow"
-# Doc `# Errors` sections deferred until feat-7+ when APIs are finalised.
 missing_errors_doc = "allow"
 
 # ── Safety lints ──────────────────────────────────────────────────────────────
-# unwrap() in production code is always a hard error.
-# (allow-unwrap-in-tests = true in clippy.toml exempts #[cfg(test)] blocks.)
 unwrap_used = "deny"
-# expect() still produces a useful panic message but should still be avoided
-# in production paths; escalated to deny by `-- -D warnings` in CI / pre-commit.
 expect_used = "warn"
 
 [workspace.dependencies]
 # ── Chia Blockchain (xch-dev + Chia-Network) ─────────────────────────────────
 chia-wallet-sdk = "0.23"
-chia-protocol    = "0.25"
-chia-bls         = "0.14"
+chia-protocol    = { version = "0.25", features = ["serde"] }
+chia-bls         = "0.25"
 clvm-traits      = "0.14"
 chia-sdk-test    = "0.26"
 
@@ -63,12 +56,13 @@ chacha20poly1305  = "0.10"
 rand              = "0.8"
 
 # ── Async runtime ─────────────────────────────────────────────────────────────
-# axum is a transitive dep via loco-rs — do not add directly
 tokio = { version = "1.40", features = ["full"] }
 
 # ── Serialization ─────────────────────────────────────────────────────────────
 serde      = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+reqwest    = { version = "0.12", features = ["json"] }
+hex        = "0.4"
 quick-xml  = "0.37"
 uuid       = { version = "1.11", features = ["v4", "serde"] }
 chrono     = { version = "0.4",  features = ["serde"] }
@@ -81,7 +75,8 @@ rocksdb = "0.22"
 wasm-bindgen = "0.2"
 
 # ── Workspace-internal crates ─────────────────────────────────────────────────
-pegin-domain = { path = "crates/pegin-domain" }
-pegin-identity = { path = "crates/pegin-identity" }
-pegin-wallet = { path = "crates/pegin-wallet" }
-pegin-testing = { path = "crates/pegin-testing" }
+pegin-domain         = { path = "crates/pegin-domain" }
+pegin-identity       = { path = "crates/pegin-identity" }
+pegin-wallet         = { path = "crates/pegin-wallet" }
+pegin-infrastructure = { path = "crates/pegin-infrastructure" }
+pegin-testing        = { path = "crates/pegin-testing" }

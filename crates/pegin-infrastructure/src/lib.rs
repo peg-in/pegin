@@ -1,4 +1,2 @@
-// Infrastructure adapters: ChiaGateway (coinset.org), LocalProfileStore
-
-pub mod chia_gateway;
+pub mod chia;
 pub mod local_profile_store;
