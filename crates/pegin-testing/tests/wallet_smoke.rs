@@ -46,7 +46,8 @@ fn did_factory_creates_did_on_simulator() {
 #[test]
 fn mock_passkey_verifier_returns_fixed_assertion() {
     let mock = MockPasskeyVerifier::new().with_credential("alice");
-    let did = Did::new("did:chia:0000000000000000000000000000000000000000000000000000000000000000");
+    let did = Did::try_from("did:chia:0000000000000000000000000000000000000000000000000000000000000000")
+        .unwrap();
 
     let challenge = mock.begin_authentication(&did).unwrap();
     assert!(!challenge.is_empty());
