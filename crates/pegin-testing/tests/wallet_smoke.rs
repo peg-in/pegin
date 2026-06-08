@@ -1,9 +1,6 @@
 use pegin_domain::did::Did;
 use pegin_identity::modules::identity::service::PasskeyAuthenticator;
-use pegin_testing::{
-    modules::harness::{helper::create_did, service::TestHarness},
-    MockPasskeyVerifier,
-};
+use pegin_testing::{create_did, MockPasskeyVerifier, TestHarness};
 use serde::Deserialize;
 
 // ---------------------------------------------------------------------------
