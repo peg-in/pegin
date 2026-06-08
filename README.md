@@ -1,5 +1,7 @@
 # PEGIN — Penguin Gateway Identity
 
+[![CI](https://github.com/peg-in/pegin/actions/workflows/ci.yml/badge.svg)](https://github.com/peg-in/pegin/actions/workflows/ci.yml)
+
 Fully decentralized SSO on **Chia** + **DIG Network**. Passkey login anchored to a Chia DID. No passwords, no seed phrases in the user flow.
 
 ---

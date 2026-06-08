@@ -16,7 +16,8 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "dev": "tsc --watch",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "echo 'No tests yet — see feat-6'"
   },
   "dependencies": {
     "@simplewebauthn/browser": "^13.0.0"
