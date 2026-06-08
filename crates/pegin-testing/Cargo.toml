@@ -13,3 +13,6 @@ chia-sdk-test   = { workspace = true }
 chia-protocol   = { workspace = true }
 serde           = { workspace = true }
 serde_json      = { workspace = true }
+
+[dev-dependencies]
+chia-wallet-sdk.workspace = true
