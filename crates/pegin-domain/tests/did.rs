@@ -32,19 +32,17 @@ fn rejects_short_launcher_id() {
 
 #[test]
 fn rejects_uppercase_hex() {
-    let err = Did::try_from(
-        "did:chia:DEADBEEF000000000000000000000000000000000000000000000000CAFEBABE",
-    )
-    .unwrap_err();
+    let err =
+        Did::try_from("did:chia:DEADBEEF000000000000000000000000000000000000000000000000CAFEBABE")
+            .unwrap_err();
     assert!(matches!(err, DomainError::InvalidDid(_)));
 }
 
 #[test]
 fn rejects_non_hex_chars() {
-    let err = Did::try_from(
-        "did:chia:gggggggg000000000000000000000000000000000000000000000000cafebabe",
-    )
-    .unwrap_err();
+    let err =
+        Did::try_from("did:chia:gggggggg000000000000000000000000000000000000000000000000cafebabe")
+            .unwrap_err();
     assert!(matches!(err, DomainError::InvalidDid(_)));
 }
 
