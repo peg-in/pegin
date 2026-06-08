@@ -2022,8 +2022,11 @@ dependencies = [
 name = "pegin-testing"
 version = "0.1.0"
 dependencies = [
+ "chia-protocol 0.25.0",
  "chia-sdk-test 0.26.0",
+ "chia-wallet-sdk",
  "pegin-domain",
+ "pegin-identity",
  "serde",
  "serde_json",
 ]

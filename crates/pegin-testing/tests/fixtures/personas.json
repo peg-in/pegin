@@ -1,0 +1,12 @@
+{
+  "personas": [
+    {
+      "username": "alice",
+      "credential_id": "YWxpY2VfbW9ja19jcmVkZW50aWFs"
+    },
+    {
+      "username": "bob",
+      "credential_id": "Ym9iX21vY2tfY3JlZGVudGlhbA=="
+    }
+  ]
+}

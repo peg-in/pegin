@@ -7,7 +7,12 @@ edition = "2021"
 workspace = true
 
 [dependencies]
-pegin-domain = { workspace = true }
-chia-sdk-test = { workspace = true }
-serde        = { workspace = true }
-serde_json   = { workspace = true }
+pegin-domain    = { workspace = true }
+pegin-identity  = { workspace = true }
+chia-sdk-test   = { workspace = true }
+chia-protocol   = { workspace = true }
+serde           = { workspace = true }
+serde_json      = { workspace = true }
+
+[dev-dependencies]
+chia-wallet-sdk.workspace = true
