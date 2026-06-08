@@ -12,8 +12,6 @@ jobs:
   rust:
     name: Rust
     runs-on: ubuntu-latest
-    env:
-      SCCACHE_GHA_ENABLED: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -22,9 +20,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-
-      - name: Install sccache
-        uses: mozilla-actions/sccache-action@v0.0.5
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -41,20 +36,14 @@ jobs:
 
       - name: Lint (clippy)
         run: cargo clippy --workspace --all-targets -- -D warnings
-        env:
-          RUSTC_WRAPPER: sccache
 
       # Build
       - name: Build
         run: cargo build --workspace
-        env:
-          RUSTC_WRAPPER: sccache
 
       # Test
       - name: Test
         run: cargo test --workspace
-        env:
-          RUSTC_WRAPPER: sccache
 
   typescript:
     name: TypeScript
