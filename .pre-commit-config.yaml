@@ -20,6 +20,13 @@ repos:
         types: [rust]
         pass_filenames: false
 
+      - id: cargo-test
+        name: "Rust: cargo test"
+        language: system
+        entry: cargo test --workspace
+        types: [rust]
+        pass_filenames: false
+
       - id: prettier-check
         name: "TS: prettier --check"
         language: system
@@ -33,3 +40,17 @@ repos:
         entry: pnpm exec eslint
         files: '\.(ts|tsx)$'
         pass_filenames: true
+
+      - id: pnpm-build
+        name: "TS: pnpm build"
+        language: system
+        entry: pnpm -r build
+        files: '\.(ts|tsx)$'
+        pass_filenames: false
+
+      - id: pnpm-test
+        name: "TS: pnpm test"
+        language: system
+        entry: pnpm -r test
+        files: '\.(ts|tsx)$'
+        pass_filenames: false

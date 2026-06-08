@@ -9,7 +9,8 @@
     "test": "cargo test --workspace && pnpm -r test",
     "dev": "pnpm -r dev",
     "typecheck": "pnpm -r typecheck",
-    "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm -r lint"
+    "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm -r lint",
+    "format": "cargo fmt --all && pnpm exec prettier --write \"**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "eslint": "^10.4.1",

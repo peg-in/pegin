@@ -3,7 +3,7 @@
 // Full implementation in feat-8 / feat-9.
 
 export interface PeginApiOptions {
-  baseUrl: string;
+  baseUrl: string
 }
 
 export class PeginApiClient {
@@ -11,11 +11,11 @@ export class PeginApiClient {
 
   async post<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(`${this.options.baseUrl}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error(`PEGIN API ${path} → ${res.status}`);
-    return res.json() as Promise<T>;
+    })
+    if (!res.ok) throw new Error(`PEGIN API ${path} → ${res.status}`)
+    return res.json() as Promise<T>
   }
 }

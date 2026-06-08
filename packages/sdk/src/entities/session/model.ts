@@ -3,13 +3,13 @@
 
 export interface PeginSession {
   /** Stable user identifier (JWT sub claim, derived from DID). */
-  sub: string;
+  sub: string
   /** The user's Chia DID — `did:chia:<launcher-id>`. */
-  did: string;
+  did: string
   /** Raw JWT string issued by the PEGIN backend. */
-  jwt: string;
+  jwt: string
   /** Unix timestamp (seconds) when the JWT expires. */
-  expiresAt: number;
+  expiresAt: number
   /** Human-readable display name (preferred_username in JWT). */
-  username: string;
+  username: string
 }

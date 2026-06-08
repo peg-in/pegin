@@ -1,22 +1,21 @@
-use std::fmt;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
+pub enum DomainError {
+    #[error("invalid DID: {0}")]
+    InvalidDid(String),
+    #[error("invalid username: {0}")]
+    InvalidUsername(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum AppError {
-    NotFound(String),
-    Unauthorized(String),
-    InvalidInput(String),
-    Internal(String),
+    #[error(transparent)]
+    Domain(#[from] DomainError),
+    #[error("infrastructure error: {0}")]
+    Infrastructure(String),
+    #[error("unauthorized")]
+    Unauthorized,
+    #[error("not found")]
+    NotFound,
 }
-
-impl fmt::Display for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            AppError::NotFound(msg) => write!(f, "not found: {msg}"),
-            AppError::Unauthorized(msg) => write!(f, "unauthorized: {msg}"),
-            AppError::InvalidInput(msg) => write!(f, "invalid input: {msg}"),
-            AppError::Internal(msg) => write!(f, "internal error: {msg}"),
-        }
-    }
-}
-
-impl std::error::Error for AppError {}
