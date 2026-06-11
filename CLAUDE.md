@@ -116,20 +116,27 @@ pnpm --filter @pegin/mini dev    # launch desktop dev mode
 
 ## CI / build pipeline
 
-The pipeline uses **no marketplace toolchain/cache actions**. All build/lint/test commands
-live in the root `Makefile`; the toolchain lives in `ci/Dockerfile` (rust + wasm + node +
-headless chromium), cached across runs by cargo-chef + a registry layer cache. The GitHub
-workflow builds the image once and runs `docker run … make <target>` per job.
+Three parallel tracks on GitHub Actions — **no Docker**:
+
+| Track | Jobs | Caching |
+|-------|------|---------|
+| Rust | `rust-build` → `rust-clippy` + `rust-test` (+ `rust-fmt` in parallel) | `Swatinem/rust-cache@v2` with shared key `pegin-rust-v1` |
+| TypeScript | `typescript` (lint · build · test) | `actions/setup-node` pnpm cache |
+| WASM | `wasm` (after `rust-build`) | same Rust cache + pre-built wasm32 test deps |
+
+`rust-build` compiles the workspace once (`cargo build --workspace --tests` plus
+`pegin-wasm` wasm32 test deps). Downstream Rust/WASM jobs restore the same `target/`
+cache instead of recompiling external crates.
 
 ```bash
-make ci          # everything: ci-core + ci-web + ci-wasm
-make ci-core     # cargo fmt --check, clippy, test --workspace
-make ci-web      # pnpm lint / build / test across packages + apps
-make ci-wasm     # wasm-pack browser test, build (node+bundler), node smoke, SDK test
+cargo fmt --all -- --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+pnpm -r lint && pnpm -r build && pnpm -r test
 ```
 
-- GitHub workflow: `.github/workflows/ci.yml` (image → registry: `ghcr.io/<owner>/pegin-ci`)
-- Bump the Rust toolchain via `RUST_VERSION` in `ci/Dockerfile`.
+- Workflow: `.github/workflows/ci.yml`
+- Bump `RUST_CACHE_KEY` in the workflow when you need a cold cache (e.g. after a toolchain bump).
 
 ## Pre-commit hooks (Rust quality gates)
 

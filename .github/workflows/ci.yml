@@ -1,7 +1,8 @@
 name: CI
 
-# Thin wrapper around ci/Dockerfile + Makefile. No marketplace toolchain actions —
-# run locally via `make ci-docker`.
+# Rust: build once → fmt / clippy / test / wasm reuse the same cached target/ dir.
+# TypeScript: fully independent track with pnpm cache.
+# No Docker — Swatinem/rust-cache shares compiled deps across jobs via a shared key.
 
 on:
   pull_request:
@@ -12,64 +13,160 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/pegin-ci
+  RUST_CACHE_KEY: pegin-rust-v1
 
 jobs:
-  image:
-    name: Build CI image
+  rust-build:
+    name: Rust build
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
 
-      - name: Set up Buildx
-        run: docker buildx create --use --driver docker-container
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
+          cache-on-failure: true
 
-      - name: Build and push
+      - name: Build workspace (native + wasm test deps)
         run: |
-          docker buildx build \
-            --file ci/Dockerfile \
-            --target builder \
-            --tag "$IMAGE:${{ github.sha }}" \
-            --cache-from type=registry,ref=$IMAGE:buildcache \
-            --cache-to type=registry,ref=$IMAGE:buildcache,mode=max \
-            --push \
-            .
+          cargo build --workspace --tests
+          cargo build -p pegin-wasm --target wasm32-unknown-unknown --tests
 
-  core:
-    name: Rust — fmt · clippy · test
-    needs: image
+  rust-fmt:
+    name: Rust fmt
     runs-on: ubuntu-latest
     steps:
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      - run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-core
+      - uses: actions/checkout@v4
 
-  sdk-web:
-    name: TypeScript — lint · build · test
-    needs: image
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+  rust-clippy:
+    name: Rust clippy
+    needs: rust-build
     runs-on: ubuntu-latest
     steps:
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      - run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-web
+      - uses: actions/checkout@v4
 
-  browser-wallet:
-    name: WASM — browser test · build · smoke · SDK
-    needs: image
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
+          cache-on-failure: true
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+  rust-test:
+    name: Rust test
+    needs: rust-build
     runs-on: ubuntu-latest
     steps:
-      - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      - run: |
-          docker run --rm --shm-size=2g \
-            -e PEGIN_MNEMONIC -e PEGIN_DID \
-            "$IMAGE:${{ github.sha }}" make ci-wasm
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
+          cache-on-failure: true
+
+      - name: Test
+        run: cargo test --workspace
+
+  typescript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm -r lint && pnpm exec eslint "crates/**/*.mjs"
+
+      - name: Build
+        run: pnpm -r build
+
+      - name: Test
+        run: pnpm -r test
+
+  wasm:
+    name: Browser wallet (WASM)
+    needs: rust-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
+          cache-on-failure: true
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Release wasm builds; test deps were warmed in rust-build.
+      - name: Build wasm packages (node + bundler)
+        run: pnpm build:wasm:node && pnpm build:wasm
+
+      - name: Browser wallet tests (headless Chrome)
+        run: wasm-pack test --headless --chrome crates/pegin-wasm
+
+      - name: On-chain smoke test (Node)
+        run: pnpm smoke
         env:
           PEGIN_MNEMONIC: ${{ secrets.PEGIN_MNEMONIC }}
           PEGIN_DID: ${{ vars.PEGIN_DID }}
+
+      - name: Login SDK tests
+        run: pnpm --filter @pegin/sdk test
