@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Manual test CLI: mnemonic → BLS keys → on-chain DID check → self-signed JWT.
+ * Manual test CLI: mnemonic → BLS keys → on-chain DID lookup → self-signed JWT.
  * Runs the browser WASM in Node ≥ 20.12. Build first:
  *   wasm-pack build --target nodejs --out-dir pkg-node
- * Usage: node demo-cli.mjs <did:chia:1...|launcher_hex> [--aud url] [--ttl sec] [--base-url url]
+ * Usage: node demo-cli.mjs [--peer-url url] [--aud url] [--ttl sec]
  *        node demo-cli.mjs --skip-chain
  * Prints only the JWT on stdout; diagnostics need LOG_LEVEL=info (wiki: logging-strategy).
  * Mnemonic: PEGIN_MNEMONIC env var > .env next to script > hidden prompt.
@@ -17,6 +17,7 @@ import { createInterface } from "node:readline";
 import { Writable } from "node:stream";
 import { logger } from "./logger.mjs";
 import {
+  defaultPeerUrl,
   deriveWalletKeys,
   getDid,
   mintJwt,
@@ -29,17 +30,20 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 /**
  * @param {string[]} argv - CLI args without the node/script prefix
- * @returns {{didInput?: string, aud: string, ttl: number, baseUrl: string|null, skipChain?: boolean}}
+ * @returns {{peerUrl: string|null, aud: string, ttl: number, skipChain?: boolean}}
  */
 function parseArgs(argv) {
-  const args = { aud: "https://app.example.com", ttl: 3600, baseUrl: null };
+  const args = { aud: "https://app.example.com", ttl: 3600, peerUrl: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--aud") args.aud = argv[++i];
     else if (a === "--ttl") args.ttl = Number(argv[++i]);
-    else if (a === "--base-url") args.baseUrl = argv[++i];
+    else if (a === "--peer-url") args.peerUrl = argv[++i];
     else if (a === "--skip-chain") args.skipChain = true;
-    else if (!a.startsWith("--")) args.didInput = a;
+    else if (!a.startsWith("--")) {
+      logger.error(`unexpected positional argument '${a}' — DID is resolved from keys, not CLI input`);
+      process.exit(1);
+    }
   }
   return args;
 }
@@ -68,13 +72,6 @@ if (!Number.isInteger(args.ttl) || args.ttl <= 0) {
   logger.error(`--ttl must be a positive integer number of seconds, got '${args.ttl}'`);
   process.exit(1);
 }
-if (!args.didInput && !args.skipChain) {
-  logger.error(
-    "usage: node demo-cli.mjs <did:chia:1... | launcher_id_hex> [--aud <url>] [--ttl <seconds>] [--base-url <url>]\n" +
-    "      node demo-cli.mjs --skip-chain  (mint without on-chain DID check)"
-  );
-  process.exit(1);
-}
 
 let mnemonic = process.env.PEGIN_MNEMONIC;
 if (!mnemonic) {
@@ -90,15 +87,20 @@ const keys = deriveWalletKeys(mnemonic);
 logger.info(`wallet pk: ${keys.walletPkHex}`);
 logger.info(`did pk: ${keys.didPkHex}`);
 
+const peerUrl = args.peerUrl ?? defaultPeerUrl();
 let did;
 if (args.skipChain) {
   did = "did:chia:0000000000000000000000000000000000000000000000000000000000000000";
   logger.info(`did: ${did} (on-chain check SKIPPED)`);
 } else {
   try {
-    did = await getDid(args.didInput, args.baseUrl);
+    did = await getDid(keys, peerUrl);
+    if (did === null || did === undefined) {
+      logger.error("no on-chain DID found for these keys");
+      process.exit(1);
+    }
   } catch (e) {
-    logger.error(`DID verification failed: ${e.message}`);
+    logger.error(`DID lookup failed: ${e.message}`);
     process.exit(1);
   }
   logger.info(`did: ${did} (verified on-chain)`);

@@ -12,11 +12,12 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 chia-bls             = { workspace = true }
 chia-protocol        = { workspace = true }
+chia-puzzles         = { workspace = true }
+chia-puzzle-types    = { workspace = true }
 chia-traits          = { workspace = true }
 wasm-bindgen         = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
 js-sys               = { workspace = true }
-gloo-net             = { workspace = true }
 bip39                = { workspace = true }
 serde                = { workspace = true }
 serde_json           = { workspace = true }
@@ -24,12 +25,17 @@ hex                  = { workspace = true }
 base64               = { workspace = true }
 bech32               = { workspace = true }
 
-# tokio is deliberately absent: it (via mio) does not compile on
+# tokio is deliberately absent from [dependencies]: it (via mio) does not compile on
 # wasm32-unknown-unknown, and `wasm-pack test` builds dev-dependencies too.
 [dev-dependencies]
 wasm-bindgen-test = { workspace = true }
 
-# Not used directly: enables the "js" feature on the getrandom 0.2 that chia
-# deps pull in transitively, so it can reach browser crypto on wasm32-unknown-unknown.
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }
+
+# Browser-only transport (REST via gloo-net; WebSocket peer protocol later).
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-getrandom = { version = "0.2", features = ["js"] }
+gloo-net     = { workspace = true }
+gloo-timers  = { workspace = true }
+futures-util = { workspace = true }
+getrandom    = { version = "0.2", features = ["js"] }

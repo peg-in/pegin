@@ -1452,6 +1452,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "gloo-timers"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbb143cf96099802033e0d4f4963b19fd2e0b728bcf076cd9cf7f6634f092994"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "gloo-utils"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2314,13 +2326,18 @@ dependencies = [
  "bip39",
  "chia-bls 0.25.0",
  "chia-protocol 0.25.0",
+ "chia-puzzle-types 0.25.0",
+ "chia-puzzles",
  "chia-traits 0.25.0",
+ "futures-util",
  "getrandom 0.2.17",
  "gloo-net",
+ "gloo-timers",
  "hex",
  "js-sys",
  "serde",
  "serde_json",
+ "tokio",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-bindgen-test",
