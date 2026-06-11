@@ -1,0 +1,12 @@
+# Keep the build context small and the cargo-chef cache layer stable.
+.git
+target
+**/target
+**/node_modules
+**/pkg
+**/pkg-node
+packages/sdk/wasm
+**/*.wasm
+docs
+.github
+.forgejo

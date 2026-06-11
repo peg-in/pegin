@@ -1,8 +1,10 @@
 name: CI
 
-# Action-free pipeline: all logic lives in ci/Dockerfile + Makefile, so the same
-# build runs on Codeberg/Forgejo and GitLab. Only first-party checkout is used;
-# no marketplace toolchain/cache actions (dtolnay, sccache, rust-cache, …).
+# Codeberg (Forgejo Actions) mirror of .github/workflows/ci.yml. Same Dockerfile,
+# same Makefile targets — only the registry host and login secret differ.
+#
+# Required repo secrets: REGISTRY_TOKEN (Codeberg package write), and optionally
+# PEGIN_MNEMONIC / PEGIN_DID for the on-chain smoke test.
 
 on:
   pull_request:
@@ -13,27 +15,21 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/pegin-ci
+  IMAGE: codeberg.org/${{ github.repository_owner }}/pegin-ci
 
 jobs:
   image:
     name: CI image (toolchain + cached deps)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+    runs-on: docker
     steps:
       - uses: actions/checkout@v4
 
       - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login codeberg.org -u "${{ github.actor }}" --password-stdin
 
-      # container driver is required to export a registry layer cache.
       - name: Set up Buildx
         run: docker buildx create --use --driver docker-container
 
-      # cargo-chef `cook` layer is restored from / saved to the registry cache,
-      # so chia-* dependencies are not recompiled when Cargo.lock is unchanged.
       - name: Build and push CI image
         run: |
           docker buildx build \
@@ -48,32 +44,30 @@ jobs:
   core:
     name: Core libraries — domain · identity · wallet · gateway
     needs: image
-    runs-on: ubuntu-latest
+    runs-on: docker
     steps:
       - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login codeberg.org -u "${{ github.actor }}" --password-stdin
       - name: Lint + test workspace
         run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-core
 
   sdk-web:
     name: Login SDK & web apps
     needs: image
-    runs-on: ubuntu-latest
+    runs-on: docker
     steps:
       - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login codeberg.org -u "${{ github.actor }}" --password-stdin
       - name: Lint + build + test packages
         run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-web
 
   browser-wallet:
     name: Browser wallet (WASM)
     needs: image
-    runs-on: ubuntu-latest
+    runs-on: docker
     steps:
       - name: Log in to registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      # --shm-size avoids Chrome crashing on the container's tiny default /dev/shm.
-      # PEGIN_* power the on-chain smoke test; it self-skips when unset (fork PRs).
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login codeberg.org -u "${{ github.actor }}" --password-stdin
       - name: Browser + smoke + SDK tests
         run: |
           docker run --rm --shm-size=2g \
