@@ -12,18 +12,16 @@ const JWT_HEADER: &str = r#"{"alg":"BLS12381_G2","typ":"JWT"}"#;
 /// Mints a compact JWT `header.payload.signature` (base64url). Infallible.
 ///
 /// * `did` — fills the `iss` and `sub` claims
-/// * `aud` — audience claim
 /// * `ttl_seconds` — sets `exp` relative to now
-pub fn mint_jwt_inner(keys: &WalletKeys, did: &str, aud: &str, ttl_seconds: u32) -> String {
-    mint_jwt_at(keys, did, aud, ttl_seconds, current_unix_secs())
+pub fn mint_jwt_inner(keys: &WalletKeys, did: &str, ttl_seconds: u32) -> String {
+    mint_jwt_at(keys, did, ttl_seconds, current_unix_secs())
 }
 
 /// Time-injectable core of [`mint_jwt_inner`] so tests can mint expired tokens.
-fn mint_jwt_at(keys: &WalletKeys, did: &str, aud: &str, ttl_seconds: u32, iat: u64) -> String {
+fn mint_jwt_at(keys: &WalletKeys, did: &str, ttl_seconds: u32, iat: u64) -> String {
     let payload = json!({
         "iss": did,
         "sub": did,
-        "aud": aud,
         "iat": iat,
         "exp": iat + u64::from(ttl_seconds),
     });
@@ -39,10 +37,10 @@ fn mint_jwt_at(keys: &WalletKeys, did: &str, aud: &str, ttl_seconds: u32, iat: u
 
 /// Verifies signature and expiry of a JWT minted by [`mint_jwt_inner`].
 ///
-/// * `did_pk_hex` — 48-byte BLS G1 public key, lowercase hex
+/// * `did_public_key` — 48-byte BLS G1 public key
 /// * returns `Ok(false)` for expired, missing-`exp`, or bad-signature tokens
 /// * returns `Err` for malformed encodings
-pub fn verify_jwt_inner(token: &str, did_pk_hex: &str) -> Result<bool, String> {
+pub fn verify_jwt_inner(token: &str, did_public_key: &[u8]) -> Result<bool, String> {
     let [header_b64, payload_b64, sig_b64]: [&str; 3] = token
         .split('.')
         .collect::<Vec<_>>()
@@ -66,9 +64,7 @@ pub fn verify_jwt_inner(token: &str, did_pk_hex: &str) -> Result<bool, String> {
     let sig = Signature::from_bytes(&to_array::<96>(&sig_bytes, "JWT signature")?)
         .map_err(|e| format!("invalid BLS signature: {e}"))?;
 
-    let pk_bytes =
-        hex::decode(did_pk_hex).map_err(|e| format!("invalid DID public key hex: {e}"))?;
-    let pk = PublicKey::from_bytes(&to_array::<48>(&pk_bytes, "DID public key")?)
+    let pk = PublicKey::from_bytes(&to_array::<48>(did_public_key, "DID public key")?)
         .map_err(|e| format!("invalid BLS public key: {e}"))?;
 
     let signing_input = format!("{header_b64}.{payload_b64}");
@@ -106,41 +102,56 @@ mod tests {
          abandon abandon abandon abandon abandon about";
     const TEST_DID: &str =
         "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
-    const TEST_AUD: &str = "https://app.example.com";
+
+    fn did_pk(keys: &WalletKeys) -> Vec<u8> {
+        keys.did_sk.public_key().to_bytes().to_vec()
+    }
 
     #[test]
     fn mint_and_verify_round_trip() {
         let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
-        let token = mint_jwt_inner(&keys, TEST_DID, TEST_AUD, 3600);
-        assert!(verify_jwt_inner(&token, &keys.did_pk_hex()).unwrap());
+        let token = mint_jwt_inner(&keys, TEST_DID, 3600);
+        assert!(verify_jwt_inner(&token, &did_pk(&keys)).unwrap());
+    }
+
+    #[test]
+    fn payload_contains_iss_sub_iat_exp_only() {
+        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let token = mint_jwt_inner(&keys, TEST_DID, 3600);
+        let payload_b64 = token.split('.').nth(1).unwrap();
+        let payload: Value =
+            serde_json::from_slice(&URL_SAFE_NO_PAD.decode(payload_b64).unwrap()).unwrap();
+
+        assert_eq!(payload["iss"], TEST_DID);
+        assert_eq!(payload["sub"], TEST_DID);
+        assert!(payload.get("iat").and_then(Value::as_u64).is_some());
+        assert!(payload.get("exp").and_then(Value::as_u64).is_some());
+        assert!(payload.get("aud").is_none());
     }
 
     #[test]
     fn tampered_payload_fails_verification() {
         let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
-        let token = mint_jwt_inner(&keys, TEST_DID, TEST_AUD, 3600);
+        let token = mint_jwt_inner(&keys, TEST_DID, 3600);
 
-        // Swap out the payload for a different (unexpired) one — signature must break.
         let parts: Vec<&str> = token.split('.').collect();
         let evil_payload =
             URL_SAFE_NO_PAD.encode(r#"{"iss":"attacker","sub":"attacker","exp":9999999999}"#);
         let tampered = format!("{}.{}.{}", parts[0], evil_payload, parts[2]);
 
-        assert!(!verify_jwt_inner(&tampered, &keys.did_pk_hex()).unwrap());
+        assert!(!verify_jwt_inner(&tampered, &did_pk(&keys)).unwrap());
     }
 
     #[test]
     fn expired_jwt_fails_verification() {
         let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
-        // iat far in the past → exp already elapsed.
-        let token = mint_jwt_at(&keys, TEST_DID, TEST_AUD, 60, 1_000_000);
-        assert!(!verify_jwt_inner(&token, &keys.did_pk_hex()).unwrap());
+        let token = mint_jwt_at(&keys, TEST_DID, 60, 1_000_000);
+        assert!(!verify_jwt_inner(&token, &did_pk(&keys)).unwrap());
     }
 
     #[test]
     fn missing_exp_claim_fails_verification() {
         let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
-        // Foreign token without `exp` — built by hand since mint always sets it.
         let signing_input = format!(
             "{}.{}",
             URL_SAFE_NO_PAD.encode(JWT_HEADER),
@@ -149,7 +160,7 @@ mod tests {
         let sig = sign(&keys.did_sk, signing_input.as_bytes());
         let token = format!("{signing_input}.{}", URL_SAFE_NO_PAD.encode(sig.to_bytes()));
 
-        assert!(!verify_jwt_inner(&token, &keys.did_pk_hex()).unwrap());
+        assert!(!verify_jwt_inner(&token, &did_pk(&keys)).unwrap());
     }
 
     #[test]
@@ -157,13 +168,13 @@ mod tests {
         let keys_a = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
         let keys_b =
             derive_wallet_keys_inner("zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong").unwrap();
-        let token = mint_jwt_inner(&keys_a, TEST_DID, TEST_AUD, 3600);
-        assert!(!verify_jwt_inner(&token, &keys_b.did_pk_hex()).unwrap());
+        let token = mint_jwt_inner(&keys_a, TEST_DID, 3600);
+        assert!(!verify_jwt_inner(&token, &did_pk(&keys_b)).unwrap());
     }
 
     #[test]
     fn malformed_token_is_an_error() {
         let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
-        assert!(verify_jwt_inner("not-a-jwt", &keys.did_pk_hex()).is_err());
+        assert!(verify_jwt_inner("not-a-jwt", &did_pk(&keys)).is_err());
     }
 }

@@ -12,6 +12,7 @@
     "smoke": "node crates/pegin-wasm/smoke-test.mjs",
     "test:smoke": "pnpm build:wasm:node && pnpm smoke",
     "test:wasm": "wasm-pack test --headless --chrome crates/pegin-wasm",
+    "test:jwt": "pnpm build:wasm && pnpm --filter @pegin/sdk exec vitest run tests/jwt.test.ts",
     "test:all": "cargo test --workspace -- --include-ignored && pnpm build:wasm:node && pnpm build:wasm && pnpm test:wasm && pnpm smoke && pnpm --filter @pegin/sdk test",
     "dev": "pnpm -r dev",
     "typecheck": "pnpm -r typecheck",

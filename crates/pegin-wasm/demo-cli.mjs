@@ -106,11 +106,11 @@ if (args.skipChain) {
   logger.info(`did: ${did} (verified on-chain)`);
 }
 
-const token = mintJwt(keys, did, args.aud, args.ttl);
+const token = mintJwt(keys, did, args.ttl);
 const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
 logger.info(`claims: ${JSON.stringify(payload)}`);
 
-if (!verifyJwt(token, keys.didPkHex)) {
+if (!verifyJwt(token, keys.didPublicKey)) {
   logger.error("self-verification of the minted JWT failed");
   process.exit(1);
 }

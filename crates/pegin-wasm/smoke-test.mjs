@@ -63,23 +63,23 @@ await test("challenge signature is 96 bytes and deterministic", () => {
 });
 
 const fakeDid = "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
-const token = mintJwt(keys, fakeDid, "https://smoke.test", 600);
+const token = mintJwt(keys, fakeDid, 600);
 
 await test("minted JWT verifies against its own DID key", () => {
-  assert.equal(verifyJwt(token, keys.didPkHex), true);
+  assert.equal(verifyJwt(token, keys.didPublicKey), true);
 });
 
 await test("tampered JWT payload fails verification", () => {
   const [header, , sig] = token.split(".");
   const evil = Buffer.from('{"iss":"attacker","exp":9999999999}').toString("base64url");
-  assert.equal(verifyJwt(`${header}.${evil}.${sig}`, keys.didPkHex), false);
+  assert.equal(verifyJwt(`${header}.${evil}.${sig}`, keys.didPublicKey), false);
 });
 
 await test("JWT fails verification with a different key", () => {
   const other = deriveWalletKeys(
     "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"
   );
-  assert.equal(verifyJwt(token, other.didPkHex), false);
+  assert.equal(verifyJwt(token, other.didPublicKey), false);
 });
 
 out("\nPart 2 — personal testnet wallet (on-chain via coinset.org)");
@@ -103,8 +103,8 @@ if (!PEGIN_MNEMONIC || !PEGIN_DID) {
     });
 
     await test("personal JWT mints and verifies", () => {
-      const myToken = mintJwt(myKeys, myDid, "https://smoke.test", 600);
-      assert.equal(verifyJwt(myToken, myKeys.didPkHex), true);
+      const myToken = mintJwt(myKeys, myDid, 600);
+      assert.equal(verifyJwt(myToken, myKeys.didPublicKey), true);
     });
   }
 }

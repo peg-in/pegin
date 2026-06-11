@@ -16,6 +16,8 @@ const KNOWN_DID_PK: &str =
 // Set PEGIN_MNEMONIC to a testnet wallet with an on-chain DID before running manually.
 const LIVE_MNEMONIC: Option<&str> = option_env!("PEGIN_MNEMONIC");
 
+const TEST_DID: &str = "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
+
 // ── Scaffold smoke test ─────────────────────────────────────────────────────────
 
 #[wasm_bindgen_test]
@@ -70,7 +72,6 @@ fn rejects_invalid_mnemonic_in_browser() {
 #[wasm_bindgen_test]
 fn sign_challenge_returns_192_hex_chars_in_browser() {
     let keys = derive_wallet_keys(TEST_MNEMONIC).expect("valid mnemonic");
-    // BLS G2 signature = 96 bytes = 192 hex chars
     let sig = sign_challenge(&keys, "browser-test-nonce");
     assert_eq!(sig.len(), 192);
 }
@@ -89,8 +90,7 @@ fn sign_challenge_is_deterministic_in_browser() {
 #[wasm_bindgen_test]
 fn mint_and_verify_round_trip_in_browser() {
     let keys = derive_wallet_keys(TEST_MNEMONIC).expect("valid mnemonic");
-    let did = "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
-    let token = mint_jwt(&keys, did, "https://app.example.com", 3600);
+    let token = mint_jwt(&keys, TEST_DID, 3600);
 
     assert_eq!(
         token.split('.').count(),
@@ -98,8 +98,19 @@ fn mint_and_verify_round_trip_in_browser() {
         "JWT must have 3 dot-separated parts"
     );
 
-    let valid = verify_jwt(&token, &keys.did_pk_hex()).expect("verify must not error");
-    assert!(valid, "freshly minted JWT must verify");
+    assert!(verify_jwt(&token, &keys.did_public_key()));
+}
+
+#[wasm_bindgen_test]
+fn tampered_jwt_fails_verification_in_browser() {
+    let keys = derive_wallet_keys(TEST_MNEMONIC).expect("valid mnemonic");
+    let token = mint_jwt(&keys, TEST_DID, 3600);
+    let parts: Vec<&str> = token.split('.').collect();
+    // base64url of {"iss":"attacker","sub":"attacker","exp":9999999999}
+    const EVIL_PAYLOAD: &str =
+        "eyJpc3MiOiJhdHRhY2tlciIsInN1YiI6ImF0dGFja2VyIiwiZXhwIjo5OTk5OTk5OTk5fQ";
+    let tampered = format!("{}.{}.{}", parts[0], EVIL_PAYLOAD, parts[2]);
+    assert!(!verify_jwt(&tampered, &keys.did_public_key()));
 }
 
 #[wasm_bindgen_test]
@@ -107,11 +118,8 @@ fn wrong_public_key_fails_verification_in_browser() {
     let keys_a = derive_wallet_keys(TEST_MNEMONIC).expect("valid mnemonic");
     let keys_b = derive_wallet_keys("zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong")
         .expect("valid mnemonic");
-    let did = "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
-    let token = mint_jwt(&keys_a, did, "https://app.example.com", 3600);
-
-    let valid = verify_jwt(&token, &keys_b.did_pk_hex()).expect("verify must not error");
-    assert!(!valid, "JWT must not verify against a different public key");
+    let token = mint_jwt(&keys_a, TEST_DID, 3600);
+    assert!(!verify_jwt(&token, &keys_b.did_public_key()));
 }
 
 // ── DID lookup (live coinset.org — manual only) ───────────────────────────────
