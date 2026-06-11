@@ -3,13 +3,20 @@
 use wasm_bindgen_test::*;
 wasm_bindgen_test_configure!(run_in_browser);
 
-use pegin_wasm::{derive_wallet_keys, mint_jwt, sign_challenge, verify_jwt};
+use pegin_wasm::{derive_wallet_keys, hello, mint_jwt, sign_challenge, verify_jwt};
 
 const TEST_MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon \
      abandon abandon abandon abandon abandon about";
 
 const KNOWN_DID_PK: &str =
     "aee8545e9cef0270cb54069a9ed81a6b1e657f68ee7e102853a0887df68f28455b79a14f86823a2b81eacc29af9d9b85";
+
+// ── Scaffold smoke test ─────────────────────────────────────────────────────────
+
+#[wasm_bindgen_test]
+fn hello_returns_ready_in_browser() {
+    assert_eq!(hello(), "pegin-wasm ready");
+}
 
 // ── Key derivation ────────────────────────────────────────────────────────────
 

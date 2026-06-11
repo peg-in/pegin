@@ -1,5 +1,9 @@
 name: CI
 
+# Rust: build once → fmt / clippy / test / wasm reuse the same cached target/ dir.
+# TypeScript: fully independent track with pnpm cache.
+# No Docker — Swatinem/rust-cache shares compiled deps across jobs via a shared key.
+
 on:
   pull_request:
     branches: [main]
@@ -8,11 +12,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
-  rust:
-    name: Rust
-    runs-on: ubuntu-latest
+env:
+  RUST_CACHE_KEY: pegin-rust-v1
 
+jobs:
+  rust-build:
+    name: Rust build
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -20,17 +26,69 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@v2
         with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
           cache-on-failure: true
 
-      - name: Lint (fmt)
+      - name: Build workspace (native + wasm test deps)
+        run: |
+          cargo build --workspace --tests
+          cargo build -p pegin-wasm --target wasm32-unknown-unknown --tests
+
+  rust-fmt:
+    name: Rust fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Lint (clippy)
+  rust-clippy:
+    name: Rust clippy
+    needs: rust-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
+          cache-on-failure: true
+
+      - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+
+  rust-test:
+    name: Rust test
+    needs: rust-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
+          cache-on-failure: true
 
       - name: Test
         run: cargo test --workspace
@@ -38,7 +96,6 @@ jobs:
   typescript:
     name: TypeScript
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -55,10 +112,61 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm -r lint
+        run: pnpm -r lint && pnpm exec eslint "crates/**/*.mjs"
 
       - name: Build
         run: pnpm -r build
 
       - name: Test
         run: pnpm -r test
+
+  wasm:
+    name: Browser wallet (WASM)
+    needs: rust-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Restore Rust build cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ env.RUST_CACHE_KEY }}
+          cache-on-failure: true
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Release wasm builds; test deps were warmed in rust-build.
+      - name: Build wasm packages (node + bundler)
+        run: pnpm build:wasm:node && pnpm build:wasm
+
+      - name: Browser wallet tests (headless Chrome)
+        run: wasm-pack test --headless --chrome crates/pegin-wasm
+
+      - name: On-chain smoke test (Node)
+        run: pnpm smoke
+        env:
+          PEGIN_MNEMONIC: ${{ secrets.PEGIN_MNEMONIC }}
+          PEGIN_DID: ${{ vars.PEGIN_DID }}
+
+      - name: Login SDK tests
+        run: pnpm --filter @pegin/sdk test
