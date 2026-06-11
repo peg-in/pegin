@@ -114,13 +114,12 @@ pnpm build                       # build all packages and apps
 pnpm --filter @pegin/mini dev    # launch desktop dev mode
 ```
 
-## CI / build pipeline (forge-independent)
+## CI / build pipeline
 
-The pipeline carries **no marketplace toolchain/cache actions** so it runs the same on
-GitHub and Codeberg (Forgejo). All build/lint/test commands live in the root `Makefile`;
-the toolchain lives in `ci/Dockerfile` (rust + wasm + node + headless chromium), cached
-across runs by cargo-chef + a registry layer cache. Per-forge workflows are thin wrappers
-that build the image once and `docker run … make <target>`.
+The pipeline uses **no marketplace toolchain/cache actions**. All build/lint/test commands
+live in the root `Makefile`; the toolchain lives in `ci/Dockerfile` (rust + wasm + node +
+headless chromium), cached across runs by cargo-chef + a registry layer cache. The GitHub
+workflow builds the image once and runs `docker run … make <target>` per job.
 
 ```bash
 make ci          # everything: ci-core + ci-web + ci-wasm
@@ -130,7 +129,6 @@ make ci-wasm     # wasm-pack browser test, build (node+bundler), node smoke, SDK
 ```
 
 - GitHub workflow: `.github/workflows/ci.yml` (image → registry: `ghcr.io/<owner>/pegin-ci`)
-- Codeberg workflow: `.forgejo/workflows/ci.yml` (needs a `REGISTRY_TOKEN` secret)
 - Bump the Rust toolchain via `RUST_VERSION` in `ci/Dockerfile`.
 
 ## Pre-commit hooks (Rust quality gates)

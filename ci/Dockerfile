@@ -1,52 +1,50 @@
 # syntax=docker/dockerfile:1
 #
-# Forge-independent CI image: rust + wasm + node toolchain with cargo-chef.
-# Built identically on GitHub, Codeberg (Forgejo), GitLab, or locally — the
-# `cook` layer caches every compiled dependency, so a registry layer cache is
-# the only thing CI needs to avoid compiling chia-* from scratch each run.
+# CI image: rust + wasm + node toolchain with cargo-chef dependency caching.
+# Registry layer cache (`buildcache` tag) restores the `cook` layers across PRs so
+# chia-* crates are not recompiled when Cargo.lock is unchanged.
 #
-# Bump RUST_VERSION to track the project's stable toolchain.
-ARG RUST_VERSION=1.83
+# Bump RUST_VERSION when cargo-chef / wasm-pack require a newer toolchain.
+ARG RUST_VERSION=1.91
 
-# ── Toolchain: rust + wasm target + wasm-pack + node + pnpm + headless chrome ──
+# ── Toolchain ─────────────────────────────────────────────────────────────────
 FROM rust:${RUST_VERSION}-bookworm AS toolchain
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CHROMEDRIVER=/usr/bin/chromedriver
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      chromium chromium-driver ca-certificates curl gnupg \
+      chromium chromium-driver ca-certificates curl gnupg clang \
  && curl -fsSL https://deb.nodesource.com/setup_26.x | bash - \
  && apt-get install -y --no-install-recommends nodejs \
- && corepack enable && corepack prepare pnpm@9.0.0 --activate \
+ && npm install -g pnpm@9.0.0 \
  && rm -rf /var/lib/apt/lists/*
 
 RUN rustup target add wasm32-unknown-unknown \
  && rustup component add rustfmt clippy \
- && cargo install cargo-chef wasm-pack --locked
+ && cargo install cargo-chef@0.1.77 wasm-pack@0.15.0 --locked
 
 WORKDIR /work
 
-# ── Planner: distil the dependency graph into a recipe (no source baked) ───────
+# ── Planner: dependency recipe (fast; cook layer is what we cache) ─────────────
 FROM toolchain AS planner
-COPY . .
+COPY Cargo.toml Cargo.lock ./
+COPY crates crates
 RUN cargo chef prepare --recipe-path recipe.json
 
-# ── Builder: cook deps (cached layer), then bake source + node_modules ─────────
+# ── Builder: warm deps, then bake source ─────────────────────────────────────
 FROM toolchain AS builder
 
-# JS dependency store — cached on the lockfile alone via `pnpm fetch`.
 COPY pnpm-lock.yaml ./
 RUN pnpm fetch
 
-# Rust dependency compile — the expensive layer, cached on recipe.json.
 COPY --from=planner /work/recipe.json recipe.json
 RUN cargo chef cook --workspace --tests --recipe-path recipe.json \
- && cargo chef cook --workspace --release --recipe-path recipe.json
+ && cargo chef cook --workspace --release --recipe-path recipe.json \
+ && cargo chef cook -p pegin-wasm --tests --target wasm32-unknown-unknown --recipe-path recipe.json \
+ && cargo chef cook -p pegin-wasm --release --target wasm32-unknown-unknown --recipe-path recipe.json
 
-# Now the actual source; deps above are reused, only workspace crates rebuild.
 COPY . .
 RUN pnpm install --frozen-lockfile --offline
 
-# CI runs `docker run <image> make <target>` against this baked, warm tree.
 CMD ["make", "ci"]

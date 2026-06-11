@@ -1,8 +1,7 @@
 name: CI
 
-# Action-free pipeline: all logic lives in ci/Dockerfile + Makefile, so the same
-# build runs on Codeberg/Forgejo and GitLab. Only first-party checkout is used;
-# no marketplace toolchain/cache actions (dtolnay, sccache, rust-cache, …).
+# Thin wrapper around ci/Dockerfile + Makefile. No marketplace toolchain actions —
+# run locally via `make ci-docker`.
 
 on:
   pull_request:
@@ -17,7 +16,7 @@ env:
 
 jobs:
   image:
-    name: CI image (toolchain + cached deps)
+    name: Build CI image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,13 +27,10 @@ jobs:
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      # container driver is required to export a registry layer cache.
       - name: Set up Buildx
         run: docker buildx create --use --driver docker-container
 
-      # cargo-chef `cook` layer is restored from / saved to the registry cache,
-      # so chia-* dependencies are not recompiled when Cargo.lock is unchanged.
-      - name: Build and push CI image
+      - name: Build and push
         run: |
           docker buildx build \
             --file ci/Dockerfile \
@@ -46,36 +42,31 @@ jobs:
             .
 
   core:
-    name: Core libraries — domain · identity · wallet · gateway
+    name: Rust — fmt · clippy · test
     needs: image
     runs-on: ubuntu-latest
     steps:
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      - name: Lint + test workspace
-        run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-core
+      - run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-core
 
   sdk-web:
-    name: Login SDK & web apps
+    name: TypeScript — lint · build · test
     needs: image
     runs-on: ubuntu-latest
     steps:
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      - name: Lint + build + test packages
-        run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-web
+      - run: docker run --rm "$IMAGE:${{ github.sha }}" make ci-web
 
   browser-wallet:
-    name: Browser wallet (WASM)
+    name: WASM — browser test · build · smoke · SDK
     needs: image
     runs-on: ubuntu-latest
     steps:
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-      # --shm-size avoids Chrome crashing on the container's tiny default /dev/shm.
-      # PEGIN_* power the on-chain smoke test; it self-skips when unset (fork PRs).
-      - name: Browser + smoke + SDK tests
-        run: |
+      - run: |
           docker run --rm --shm-size=2g \
             -e PEGIN_MNEMONIC -e PEGIN_DID \
             "$IMAGE:${{ github.sha }}" make ci-wasm

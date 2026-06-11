@@ -1,16 +1,21 @@
-# PEGIN CI targets — the single source of truth for build/lint/test commands.
-# Every forge (GitHub, Codeberg/Forgejo, GitLab) and the Docker image call these,
-# so the commands live here once instead of being duplicated per-forge YAML.
+# CI command surface — one definition used locally, in Docker, and in GitHub Actions.
+#
+#   make ci        run everything (same as the Docker default CMD)
+#   make ci-core   Rust fmt + clippy + test
+#   make ci-web    TypeScript lint + build + test
+#   make ci-wasm   WASM browser test, build, smoke, SDK test
+#
+# CI builds the image once (ci/Dockerfile), then three parallel jobs each run
+# `docker run <image> make <target>`. External Rust deps are pre-compiled in the
+# image via cargo-chef; jobs only rebuild workspace crates for their target.
 
-.PHONY: ci ci-core ci-web ci-wasm \
-        lint-rust test-rust \
-        lint-web build-web test-web \
+.PHONY: ci ci-core ci-web ci-wasm ci-docker \
+        lint-rust test-rust lint-web build-web test-web \
         wasm-test wasm-build smoke sdk-test
 
-# ── Aggregate ─────────────────────────────────────────────────────────────────
 ci: ci-core ci-web ci-wasm
 
-# ── Core libraries (Rust workspace: domain · identity · wallet · gateway) ──────
+# ── Rust workspace ────────────────────────────────────────────────────────────
 ci-core: lint-rust test-rust
 
 lint-rust:
@@ -20,7 +25,7 @@ lint-rust:
 test-rust:
 	cargo test --workspace
 
-# ── Login SDK & web apps (TypeScript) ──────────────────────────────────────────
+# ── TypeScript packages & apps ────────────────────────────────────────────────
 ci-web: lint-web build-web test-web
 
 lint-web:
@@ -33,19 +38,23 @@ build-web:
 test-web:
 	pnpm -r test
 
-# ── Browser wallet (WASM) ───────────────────────────────────────────────────────
-# One build for both consumer targets; smoke + SDK tests reuse those artifacts.
-ci-wasm: wasm-test wasm-build smoke sdk-test
-
-wasm-test:
-	wasm-pack test --headless --chrome crates/pegin-wasm
+# ── Browser wallet (WASM) ─────────────────────────────────────────────────────
+ci-wasm: wasm-build wasm-test smoke sdk-test
 
 wasm-build:
 	pnpm build:wasm:node
 	pnpm build:wasm
+
+wasm-test:
+	wasm-pack test --headless --chrome crates/pegin-wasm
 
 smoke:
 	pnpm smoke
 
 sdk-test:
 	pnpm --filter @pegin/sdk test
+
+# ── Local Docker CI (mirrors GitHub Actions) ───────────────────────────────────
+ci-docker:
+	docker build -f ci/Dockerfile --target builder -t pegin-ci .
+	docker run --rm --shm-size=2g pegin-ci make ci
