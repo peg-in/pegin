@@ -74,21 +74,19 @@ pub async fn get_did(
 /// Mints a self-signed JWT with the DID key (`BLS12381_G2`). Infallible.
 ///
 /// * `did` — fills the `iss` and `sub` claims
-/// * `aud` — relying-party audience
 /// * `ttl_seconds` — lifetime from now; sets the `exp` claim
 #[wasm_bindgen(js_name = mintJwt)]
-pub fn mint_jwt(keys: &WalletKeys, did: &str, aud: &str, ttl_seconds: u32) -> String {
-    modules::jwt::service::mint_jwt_inner(keys, did, aud, ttl_seconds)
+pub fn mint_jwt(keys: &WalletKeys, did: &str, ttl_seconds: u32) -> String {
+    modules::jwt::service::mint_jwt_inner(keys, did, ttl_seconds)
 }
 
 /// Verifies a JWT minted by `mintJwt`.
 ///
-/// * `did_pk_hex` — 96-char hex DID public key (`WalletKeys.didPkHex`)
-/// * returns `false` for expired, missing-`exp`, or bad-signature tokens
-/// * throws on malformed tokens
+/// * `did_public_key` — 48-byte DID public key (`WalletKeys.didPublicKey`)
+/// * returns `false` for expired, tampered, or bad-signature tokens
 #[wasm_bindgen(js_name = verifyJwt)]
-pub fn verify_jwt(token: &str, did_pk_hex: &str) -> Result<bool, JsError> {
-    modules::jwt::service::verify_jwt_inner(token, did_pk_hex).map_err(|e| JsError::new(&e))
+pub fn verify_jwt(token: &str, did_public_key: &[u8]) -> bool {
+    modules::jwt::service::verify_jwt_inner(token, did_public_key).unwrap_or(false)
 }
 
 // Phase 2/3 hooks (next epics): deriveKeysFromPasskeyAssertion(assertion, credentialId),
