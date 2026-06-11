@@ -3,13 +3,18 @@
 use wasm_bindgen_test::*;
 wasm_bindgen_test_configure!(run_in_browser);
 
-use pegin_wasm::{derive_keys, derive_wallet_keys, hello, mint_jwt, sign_challenge, verify_jwt};
+use pegin_wasm::{
+    derive_keys, derive_wallet_keys, get_did, hello, mint_jwt, sign_challenge, verify_jwt,
+};
 
 const TEST_MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon \
      abandon abandon abandon abandon abandon about";
 
 const KNOWN_DID_PK: &str =
     "aee8545e9cef0270cb54069a9ed81a6b1e657f68ee7e102853a0887df68f28455b79a14f86823a2b81eacc29af9d9b85";
+
+// Set PEGIN_MNEMONIC to a testnet wallet with an on-chain DID before running manually.
+const LIVE_MNEMONIC: Option<&str> = option_env!("PEGIN_MNEMONIC");
 
 // ── Scaffold smoke test ─────────────────────────────────────────────────────────
 
@@ -107,4 +112,32 @@ fn wrong_public_key_fails_verification_in_browser() {
 
     let valid = verify_jwt(&token, &keys_b.did_pk_hex()).expect("verify must not error");
     assert!(!valid, "JWT must not verify against a different public key");
+}
+
+// ── DID lookup (live coinset.org — manual only) ───────────────────────────────
+
+#[wasm_bindgen_test]
+async fn get_did_returns_null_for_fresh_keys_in_browser() {
+    let keys = derive_wallet_keys(TEST_MNEMONIC).expect("valid mnemonic");
+    let did = get_did(&keys, None).await.expect("lookup must not error");
+    assert!(
+        did.is_none(),
+        "throwaway mnemonic must have no on-chain DID"
+    );
+}
+
+#[wasm_bindgen_test]
+#[ignore = "manual: requires PEGIN_MNEMONIC with a testnet DID at compile time"]
+async fn get_did_live_coinset_testnet() {
+    let Some(mnemonic) = LIVE_MNEMONIC else {
+        return;
+    };
+    let keys = derive_wallet_keys(mnemonic).expect("valid mnemonic");
+    let did = get_did(&keys, None)
+        .await
+        .expect("live lookup must not error");
+    assert!(
+        did.as_deref().is_some_and(|d| d.starts_with("did:chia:1")),
+        "expected on-chain DID for PEGIN_MNEMONIC wallet"
+    );
 }

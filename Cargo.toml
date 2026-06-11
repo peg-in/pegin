@@ -34,7 +34,10 @@ chia-wallet-sdk = "0.23"
 chia-protocol    = { version = "0.25", features = ["serde"] }
 chia-bls         = "0.25"
 chia-traits      = "0.25"
-clvm-traits      = "0.14"
+chia-puzzles     = "0.20"
+chia-puzzle-types = "0.25"
+clvm-traits      = "0.25"
+clvm-utils       = "0.25"
 chia-sdk-test    = "0.26"
 
 # ── Backend framework (Loco) ──────────────────────────────────────────────────
@@ -80,6 +83,8 @@ wasm-bindgen-futures  = "0.4"
 wasm-bindgen-test     = "0.3"
 js-sys                = "0.3"
 gloo-net              = { version = "0.6", features = ["http"] }
+gloo-timers           = { version = "0.3", features = ["futures"] }
+futures-util          = { version = "0.3", default-features = false, features = ["std"] }
 bip39                 = "2.0"
 base64                = "0.22"
 bech32                = "0.11"

@@ -1,4 +1,5 @@
 //! DID identifier forms — bech32m `did:chia:1...` ⇄ 32-byte launcher ID hex.
+#![cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 
 use bech32::{Bech32m, Hrp};
 
@@ -19,9 +20,38 @@ pub fn is_singleton_launcher(puzzle_hash: &str) -> bool {
         .eq_ignore_ascii_case(SINGLETON_LAUNCHER_PUZZLE_HASH)
 }
 
+/// Default coinset WebSocket peer (feat-12); REST base is derived automatically.
+pub const DEFAULT_PEER_WS: &str = "wss://testnet11.coinset.org:58444";
+
+/// Default coinset REST API for testnet11.
+pub const DEFAULT_REST_BASE: &str = "https://testnet11.api.coinset.org";
+
+/// Maps a peer URL (WebSocket or HTTPS) to the coinset REST base URL.
+pub fn rest_base_url(peer_url: Option<&str>) -> String {
+    match peer_url {
+        None => DEFAULT_REST_BASE.to_owned(),
+        Some(url) if url.starts_with("https://") => url.trim_end_matches('/').to_owned(),
+        Some(url) => {
+            let host = url
+                .trim_start_matches("wss://")
+                .trim_start_matches("ws://")
+                .split(':')
+                .next()
+                .unwrap_or(url);
+            match host {
+                "testnet11.coinset.org" => DEFAULT_REST_BASE.to_owned(),
+                "testnet.coinset.org" => "https://testnet.api.coinset.org".to_owned(),
+                "api.coinset.org" | "coinset.org" => "https://api.coinset.org".to_owned(),
+                other => format!("https://{other}"),
+            }
+        }
+    }
+}
+
 /// Parses a DID identifier into the 32-byte launcher ID as lowercase hex.
 ///
 /// * `input` — bech32m `did:chia:1...` (wallet display form) or 64 hex chars
+#[allow(dead_code)] // exercised in unit tests; reserved for future DID-id call sites
 pub fn parse_launcher_id(input: &str) -> Result<String, String> {
     if input.starts_with(DID_HRP) {
         let (hrp, bytes) =
@@ -60,6 +90,20 @@ mod tests {
     const DID_BECH32M: &str =
         "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
     const LAUNCHER_HEX: &str = "42fd7ee4b5735f88c58ff5ab6b3912216525e262bb99fa10dc66e4a3ec109c24";
+
+    #[test]
+    fn rest_base_url_defaults_to_testnet11() {
+        assert_eq!(rest_base_url(None), DEFAULT_REST_BASE);
+    }
+
+    #[test]
+    fn rest_base_url_maps_ws_peer_to_https_api() {
+        assert_eq!(rest_base_url(Some(DEFAULT_PEER_WS)), DEFAULT_REST_BASE);
+        assert_eq!(
+            rest_base_url(Some("https://testnet11.api.coinset.org")),
+            "https://testnet11.api.coinset.org"
+        );
+    }
 
     #[test]
     fn parses_bech32m_did_to_launcher_hex() {

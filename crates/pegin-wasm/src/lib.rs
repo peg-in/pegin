@@ -49,29 +49,26 @@ pub fn sign_spend_bundle(keys: &WalletKeys, bundle: &[u8]) -> Result<Vec<u8>, Js
     modules::signing::service::sign_spend_bundle_inner(keys, bundle).map_err(|e| JsError::new(&e))
 }
 
-/// Verifies a DID launcher coin exists on-chain via coinset.org.
+/// Default coinset WebSocket peer for testnet11.
+#[wasm_bindgen(js_name = defaultPeerUrl)]
+pub fn default_peer_url() -> String {
+    modules::did::DEFAULT_PEER_WS.to_owned()
+}
+
+/// Looks up the on-chain DID for derived wallet keys via coinset.org.
 ///
-/// * `did_or_launcher_id` — `did:chia:1...` bech32m or 64-char launcher hex
-/// * `base_url` — coinset endpoint; defaults to testnet11
-/// * returns the canonical bech32m DID string
-// async on both targets so wasm-bindgen emits a JS Promise; the native stub is sync.
+/// * `keys` — BLS keys from [`deriveWalletKeys`](crate::derive_wallet_keys)
+/// * `peer_url` — coinset peer (`wss://…`) or REST base (`https://…`); defaults to testnet11
+/// * returns `null` in JS when no DID exists; throws on network/timeout errors
 #[allow(clippy::unused_async)]
 #[wasm_bindgen(js_name = getDid)]
 pub async fn get_did(
-    did_or_launcher_id: &str,
-    base_url: Option<String>,
-) -> Result<String, JsError> {
-    #[cfg(target_arch = "wasm32")]
-    {
-        modules::did::service::get_did_inner(did_or_launcher_id, base_url.as_deref())
-            .await
-            .map_err(|e| JsError::new(&e))
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        modules::did::service::get_did_inner(did_or_launcher_id, base_url.as_deref())
-            .map_err(|e| JsError::new(&e))
-    }
+    keys: &WalletKeys,
+    peer_url: Option<String>,
+) -> Result<Option<String>, JsError> {
+    modules::did::service::get_did_for_keys_inner(keys, peer_url.as_deref())
+        .await
+        .map_err(|e| JsError::new(&e))
 }
 
 /// Mints a self-signed JWT with the DID key (`BLS12381_G2`). Infallible.
