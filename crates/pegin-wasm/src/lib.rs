@@ -7,6 +7,12 @@ use wasm_bindgen::prelude::*;
 
 pub use modules::keys::WalletKeys;
 
+/// Smoke test: proves the WASM module initialised. Carries no wallet logic.
+#[wasm_bindgen]
+pub fn hello() -> String {
+    "pegin-wasm ready".into()
+}
+
 /// Derives wallet and DID BLS keys from a BIP39 mnemonic. Deterministic.
 ///
 /// * `mnemonic` — valid 12- or 24-word English BIP39 phrase

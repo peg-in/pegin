@@ -2,6 +2,27 @@
 
 PEGIN = Penguin Gateway Identity — decentralized SSO anchored to Chia blockchain DIDs.
 
+## Where to find work (read this first)
+
+**All tasks live in `docs/pegin-issues/issues/`** (an Obsidian-vault git submodule). Before
+starting any feature or fix, open the matching issue file — it holds the user story, scenarios,
+acceptance criteria, and the git branch name to use.
+
+```
+docs/pegin-issues/issues/
+├── epics/        # epic-N — multi-feature goals (e.g. "Browser login prototype")
+├── features/     # feat-N — the unit of work; one branch per feature
+├── bugs/         # bug-N — defects
+└── proposals/    # prop-N — design proposals (architecture decisions)
+```
+
+- File naming: `feat-10 - pegin-wasm crate scaffold and build pipeline.md`.
+- Each issue has YAML front-matter: `id`, `status` (`backlog` → `in-progress` → `done`),
+  `branch`, and `[[wikilinks]]` to its epic / blockers / blocked features.
+- **Workflow:** pick the issue → check out its `branch` → implement against its acceptance
+  criteria → update the issue `status`. Keep changes scoped to that issue's "In Scope".
+- Cross-cutting design docs live in the wiki submodule: `docs/pegin-wiki/`.
+
 ## Repository structure
 
 ```
@@ -11,6 +32,7 @@ pegin/
 │   ├── pegin-identity/      # Bounded context: IdentityStore + PasskeyAuthenticator traits
 │   ├── pegin-wallet/        # Use cases: CreateAccount, SignJwt, AssertPasskey
 │   ├── pegin-infrastructure/# Adapters: ChiaGateway (coinset.org), LocalProfileStore
+│   ├── pegin-wasm/          # Browser mini wallet: #[wasm_bindgen] surface, builds to packages/sdk/wasm
 │   └── pegin-testing/       # Dev harness: chia-sdk-test helpers, domain fixtures
 ├── apps/
 │   ├── mini/                # Tauri v2 desktop shell (Rust core + React UI, pattern from Sage)

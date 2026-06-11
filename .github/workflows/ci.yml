@@ -55,10 +55,57 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint
-        run: pnpm -r lint
+        run: pnpm -r lint && pnpm exec eslint "crates/**/*.mjs"
 
       - name: Build
         run: pnpm -r build
 
       - name: Test
         run: pnpm -r test
+
+  wasm:
+    name: WASM (browser + smoke)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable with wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Runner images ship Chrome + chromedriver, which wasm-pack picks up.
+      - name: Browser tests (headless Chrome)
+        run: wasm-pack test --headless --chrome crates/pegin-wasm
+
+      # Part 2 (on-chain via coinset.org testnet11) self-skips when the
+      # repository secret/variable are unavailable, e.g. on fork PRs.
+      - name: Smoke test (Node, on-chain)
+        run: pnpm test:smoke
+        env:
+          PEGIN_MNEMONIC: ${{ secrets.PEGIN_MNEMONIC }}
+          PEGIN_DID: ${{ vars.PEGIN_DID }}
+
+      - name: SDK tests against fresh wasm build
+        run: pnpm build:wasm && pnpm --filter @pegin/sdk test
