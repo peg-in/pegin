@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 // when it has not been built, so `pnpm -r test` works on a fresh clone.
 const WASM_ENTRY = new URL('../wasm/pegin_wasm.js', import.meta.url);
 const wasmBuilt = existsSync(fileURLToPath(WASM_ENTRY));
-const { deriveWalletKeys } = wasmBuilt ? await import(WASM_ENTRY.href) : {};
+const { deriveWalletKeys, deriveKeys } = wasmBuilt ? await import(WASM_ENTRY.href) : {};
 
 const TEST_MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -23,7 +23,17 @@ describe.skipIf(!wasmBuilt)('pegin-wasm smoke test', () => {
     const keys = deriveWalletKeys(TEST_MNEMONIC);
     expect(keys.walletPkHex).toBe(KNOWN_WALLET_PK);
     expect(keys.didPkHex).toBe(KNOWN_DID_PK);
+    expect(Array.from(keys.didPublicKey)).toHaveLength(48);
     keys.free();
+  });
+
+  it('deriveKeys alias matches deriveWalletKeys', () => {
+    const a = deriveWalletKeys(TEST_MNEMONIC);
+    const b = deriveKeys(TEST_MNEMONIC);
+    expect(a.didPkHex).toBe(b.didPkHex);
+    expect(a.walletPkHex).toBe(b.walletPkHex);
+    a.free();
+    b.free();
   });
 
   it('is deterministic for the same mnemonic', () => {
@@ -42,6 +52,6 @@ describe.skipIf(!wasmBuilt)('pegin-wasm smoke test', () => {
   });
 
   it('rejects an invalid mnemonic', () => {
-    expect(() => deriveWalletKeys('not a valid mnemonic')).toThrow();
+    expect(() => deriveWalletKeys('not a valid mnemonic')).toThrow('invalid mnemonic');
   });
 });
