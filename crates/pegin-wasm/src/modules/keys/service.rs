@@ -1,3 +1,5 @@
+//! BIP39 mnemonic → Chia BLS key derivation (wallet and DID paths).
+
 use bip39::{Language, Mnemonic};
 use chia_bls::SecretKey;
 
@@ -11,14 +13,13 @@ const PATH_WALLET: u32 = 2;
 const PATH_DID: u32 = 3;
 const PATH_INDEX: u32 = 0;
 
+/// Derives the wallet and DID secret keys from a BIP39 mnemonic. Deterministic.
 pub fn derive_wallet_keys_inner(mnemonic: &str) -> Result<WalletKeys, String> {
     let mn = Mnemonic::parse_in(Language::English, mnemonic)
         .map_err(|e| format!("invalid mnemonic: {e}"))?;
 
-    // PBKDF2-SHA512 with empty passphrase (Chia default) → 64-byte seed
+    // Empty passphrase (Chia default); first 32 of the 64 seed bytes feed the master key.
     let seed = mn.to_seed("");
-
-    // chia-bls SecretKey::from_seed takes &[u8]; pass first 32 bytes of the 64-byte BIP39 seed.
     let master_sk = SecretKey::from_seed(&seed[..32]);
 
     let wallet_sk = derive_path(
@@ -72,5 +73,4 @@ mod tests {
     fn rejects_invalid_mnemonic() {
         assert!(derive_wallet_keys_inner("not a valid mnemonic phrase").is_err());
     }
-
 }

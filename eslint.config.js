@@ -85,6 +85,17 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       // numbers in template literals are a common safe pattern
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      // logging goes through the logger module — see wiki: logging-strategy
+      'no-console': 'error',
+    },
+  },
+
+  // Node scripts (demo CLI, smoke test): same no-console rule; they use the
+  // winston logger for diagnostics and process.stdout/stderr for program output.
+  {
+    files: ['crates/**/*.mjs'],
+    rules: {
+      'no-console': 'error',
     },
   },
 

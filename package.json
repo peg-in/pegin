@@ -8,10 +8,11 @@
     "build:wasm": "wasm-pack build crates/pegin-wasm --target bundler --out-dir ../../packages/sdk/wasm",
     "build": "pnpm build:wasm && cargo build --workspace && pnpm -r build",
     "test": "cargo test --workspace && pnpm -r test",
-    "test:live": "cargo test --workspace -- --include-ignored",
+    "test:smoke": "wasm-pack build crates/pegin-wasm --target nodejs --out-dir pkg-node && node crates/pegin-wasm/smoke-test.mjs",
+    "test:all": "cargo test --workspace -- --include-ignored && pnpm run test:smoke",
     "dev": "pnpm -r dev",
     "typecheck": "pnpm -r typecheck",
-    "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm -r lint",
+    "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm -r lint && pnpm exec eslint \"crates/**/*.mjs\"",
     "format": "cargo fmt --all && pnpm exec prettier --write \"**/*.{ts,tsx}\""
   },
   "devDependencies": {
@@ -19,6 +20,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "prettier": "^3.8.3",
-    "typescript-eslint": "^8.60.1"
+    "typescript-eslint": "^8.60.1",
+    "winston": "^3.19.0"
   }
 }

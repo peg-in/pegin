@@ -1,9 +1,8 @@
 use chia_bls::SecretKey;
 use wasm_bindgen::prelude::*;
 
-/// BLS wallet keys derived from a BIP39 mnemonic.
-///
-/// Secret keys never leave Rust memory. Only public key hex is exposed to JS.
+/// BLS keys derived from a BIP39 mnemonic.
+/// Secret keys never leave Rust memory — only public key hex crosses into JS.
 #[wasm_bindgen]
 pub struct WalletKeys {
     /// Wallet path m/12381/8444/2/0 — used for spend bundle signing.

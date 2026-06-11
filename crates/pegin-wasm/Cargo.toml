@@ -21,11 +21,15 @@ bip39                = { workspace = true }
 serde                = { workspace = true }
 serde_json           = { workspace = true }
 hex                  = { workspace = true }
+base64               = { workspace = true }
+bech32               = { workspace = true }
 
+# tokio is deliberately absent: it (via mio) does not compile on
+# wasm32-unknown-unknown, and `wasm-pack test` builds dev-dependencies too.
 [dev-dependencies]
-tokio = { workspace = true }
+wasm-bindgen-test = { workspace = true }
 
-# getrandom and uuid need JS features to access browser crypto on wasm32-unknown-unknown.
+# Not used directly: enables the "js" feature on the getrandom 0.2 that chia
+# deps pull in transitively, so it can reach browser crypto on wasm32-unknown-unknown.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }
-uuid      = { version = "1",   features = ["v4", "js"] }

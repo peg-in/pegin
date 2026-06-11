@@ -131,6 +131,31 @@ pre-commit run --all-files
   Test code (`#[cfg(test)]` and `pegin-testing`) is exempt via `allow-unwrap-in-tests = true` in `clippy.toml`.
 - `#[allow(clippy::...)]` suppressions must include a comment explaining why.
 
+## Comment principles
+
+Full guide: `docs/pegin-wiki/10-architecture/code-comment-principles.md`
+
+- **Never more comment lines than code lines in a file.** If it needs that much prose, fix the code.
+- Module headers: one line (`//!` in Rust, one JSDoc block in TS/JS) stating what the module *is*.
+- Function docs are JSDoc-style and compact: one verb-first summary line, then `* `param` — meaning`
+  bullets (only non-obvious params), and returns/errors only when surprising (e.g. `Ok(false)` vs `Err`).
+  TS/JS uses real `@param`/`@returns` tags.
+- Body comments state only what code can't: why, invariants, platform quirks. Never narrate the next
+  line, number steps, or reference change history.
+- Every lint suppression carries a one-line reason above it.
+
+## Logging strategy (TypeScript/JavaScript)
+
+Full guide: `docs/pegin-wiki/10-architecture/logging-strategy.md`
+
+- **`console.*` is banned** (ESLint `no-console: error`); log through the logger modules:
+  winston via `crates/pegin-wasm/logger.mjs` in Node scripts, `packages/sdk/src/shared/lib/logger.ts`
+  in the browser SDK (winston is Node-only).
+- Default level is **error**; `info`/`debug` are opt-in dev support (`LOG_LEVEL` env / `setLogLevel()`).
+- Logging ≠ program output: CLI results and test reports go to stdout via `process.stdout.write`;
+  diagnostics go to stderr through the logger.
+- Log an error once where it's handled; never log secrets (mnemonics, keys).
+
 ## Dependency pins
 
 All Rust workspace dependencies are pinned in the root `Cargo.toml [workspace.dependencies]`.
@@ -152,5 +177,7 @@ It defines:
 
 - Architecture overview: `docs/pegin-wiki/10-architecture/architecture-overview.md`
 - Structure principles: `docs/pegin-wiki/10-architecture/project-structure-principles.md`
+- Comment principles: `docs/pegin-wiki/10-architecture/code-comment-principles.md`
+- Logging strategy: `docs/pegin-wiki/10-architecture/logging-strategy.md`
 - Tech stack + dep pins: `docs/pegin-wiki/04-technical/specs/tech-stack.md`
 - Issues / tickets: `docs/pegin-issues/issues/`

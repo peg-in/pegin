@@ -1,5 +1,12 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { deriveWalletKeys } from '../wasm/pegin_wasm.js';
+
+// wasm/ is a gitignored build artifact (pnpm build:wasm). Skip — not fail —
+// when it has not been built, so `pnpm -r test` works on a fresh clone.
+const WASM_ENTRY = new URL('../wasm/pegin_wasm.js', import.meta.url);
+const wasmBuilt = existsSync(fileURLToPath(WASM_ENTRY));
+const { deriveWalletKeys } = wasmBuilt ? await import(WASM_ENTRY.href) : {};
 
 const TEST_MNEMONIC =
   'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -11,7 +18,7 @@ const KNOWN_WALLET_PK =
 const KNOWN_DID_PK =
   'aee8545e9cef0270cb54069a9ed81a6b1e657f68ee7e102853a0887df68f28455b79a14f86823a2b81eacc29af9d9b85';
 
-describe('pegin-wasm smoke test', () => {
+describe.skipIf(!wasmBuilt)('pegin-wasm smoke test', () => {
   it('derives keys matching known BLS vectors', () => {
     const keys = deriveWalletKeys(TEST_MNEMONIC);
     expect(keys.walletPkHex).toBe(KNOWN_WALLET_PK);

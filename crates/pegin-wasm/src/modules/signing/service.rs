@@ -1,8 +1,10 @@
+//! BLS signing — DID challenge proofs and spend bundle signatures.
+
 use chia_bls::{aggregate, sign, Signature};
 use chia_protocol::SpendBundle;
 use chia_traits::streamable::Streamable;
 
-use crate::modules::keys::entities::WalletKeys;
+use crate::modules::keys::WalletKeys;
 
 /// Signs a UTF-8 challenge string with the DID key using BLS `AugSchemeMPL`.
 /// Returns the 96-byte signature as lowercase hex.
@@ -11,13 +13,11 @@ pub fn sign_challenge_inner(keys: &WalletKeys, challenge: &str) -> String {
     hex::encode(sig.to_bytes())
 }
 
-/// Signs a `SpendBundle` serialised as Chia streamable bytes.
+/// Signs a `SpendBundle` (Chia streamable bytes) with the wallet key.
 ///
-/// Phase 1 simplified signing: the wallet key signs the raw `bundle_bytes`.
-/// This is sufficient for testing the signing pipeline end-to-end but is NOT
-/// the full `AGG_SIG_ME` protocol (which requires CLVM execution of each puzzle
-/// to extract signing messages). Full protocol support is deferred to a follow-up
-/// ticket that adds `chia-wallet-sdk` sub-crates once their WASM compat is confirmed.
+/// * Phase 1 simplification: signs the raw bytes, NOT the full `AGG_SIG_ME`
+///   protocol (needs CLVM puzzle execution) — deferred until `chia-wallet-sdk`
+///   WASM compatibility is confirmed
 pub fn sign_spend_bundle_inner(keys: &WalletKeys, bundle_bytes: &[u8]) -> Result<Vec<u8>, String> {
     let mut bundle = SpendBundle::from_bytes(bundle_bytes)
         .map_err(|e| format!("failed to parse SpendBundle: {e}"))?;
