@@ -18,6 +18,16 @@ pub fn hello() -> String {
 /// * `mnemonic` — valid 12- or 24-word English BIP39 phrase
 #[wasm_bindgen(js_name = deriveWalletKeys)]
 pub fn derive_wallet_keys(mnemonic: &str) -> Result<WalletKeys, JsError> {
+    derive_keys_export(mnemonic)
+}
+
+/// Alias for [`derive_wallet_keys`] (feat-11 export name).
+#[wasm_bindgen(js_name = deriveKeys)]
+pub fn derive_keys(mnemonic: &str) -> Result<WalletKeys, JsError> {
+    derive_keys_export(mnemonic)
+}
+
+fn derive_keys_export(mnemonic: &str) -> Result<WalletKeys, JsError> {
     modules::keys::service::derive_wallet_keys_inner(mnemonic).map_err(|e| JsError::new(&e))
 }
 

@@ -3,7 +3,7 @@
 use wasm_bindgen_test::*;
 wasm_bindgen_test_configure!(run_in_browser);
 
-use pegin_wasm::{derive_wallet_keys, hello, mint_jwt, sign_challenge, verify_jwt};
+use pegin_wasm::{derive_keys, derive_wallet_keys, hello, mint_jwt, sign_challenge, verify_jwt};
 
 const TEST_MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon \
      abandon abandon abandon abandon abandon about";
@@ -34,8 +34,30 @@ fn known_did_pk_vector_matches_in_browser() {
 }
 
 #[wasm_bindgen_test]
+fn derive_keys_alias_matches_derive_wallet_keys() {
+    let via_wallet = derive_wallet_keys(TEST_MNEMONIC).expect("valid mnemonic");
+    let via_keys = derive_keys(TEST_MNEMONIC).expect("valid mnemonic");
+    assert_eq!(via_wallet.did_pk_hex(), via_keys.did_pk_hex());
+    assert_eq!(via_wallet.wallet_pk_hex(), via_keys.wallet_pk_hex());
+}
+
+#[wasm_bindgen_test]
+fn did_public_key_is_48_bytes_matching_hex() {
+    let keys = derive_wallet_keys(TEST_MNEMONIC).expect("valid mnemonic");
+    let bytes = keys.did_public_key();
+    assert_eq!(bytes.len(), 48);
+    assert_eq!(keys.did_pk_hex(), KNOWN_DID_PK);
+}
+
+#[wasm_bindgen_test]
+fn derive_keys_matches_known_did_pk_in_browser() {
+    let keys = derive_keys(TEST_MNEMONIC).expect("valid mnemonic");
+    assert_eq!(keys.did_pk_hex(), KNOWN_DID_PK);
+}
+
+#[wasm_bindgen_test]
 fn rejects_invalid_mnemonic_in_browser() {
-    assert!(derive_wallet_keys("not a valid mnemonic").is_err());
+    assert!(derive_keys("not a valid mnemonic").is_err());
 }
 
 // ── Challenge signing ─────────────────────────────────────────────────────────
