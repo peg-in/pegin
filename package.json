@@ -6,9 +6,11 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "build:wasm": "wasm-pack build crates/pegin-wasm --target bundler --out-dir ../../packages/sdk/wasm",
+    "build:wasm:node": "wasm-pack build crates/pegin-wasm --target nodejs --out-dir pkg-node",
     "build": "pnpm build:wasm && cargo build --workspace && pnpm -r build",
     "test": "cargo test --workspace && pnpm -r test",
-    "test:smoke": "wasm-pack build crates/pegin-wasm --target nodejs --out-dir pkg-node && node crates/pegin-wasm/smoke-test.mjs",
+    "smoke": "node crates/pegin-wasm/smoke-test.mjs",
+    "test:smoke": "pnpm build:wasm:node && pnpm smoke",
     "test:all": "cargo test --workspace -- --include-ignored && pnpm run test:smoke",
     "dev": "pnpm -r dev",
     "typecheck": "pnpm -r typecheck",

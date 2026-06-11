@@ -9,9 +9,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rust:
-    name: Rust
+  core:
+    name: Core libraries — domain · identity · wallet · gateway
     runs-on: ubuntu-latest
+
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
+      CARGO_INCREMENTAL: "0" # sccache can't cache incremental builds; also keeps the cache small
 
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +26,10 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Cache Rust build artifacts
+      - name: Compiler cache (sccache)
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Cache cargo registry + git sources
         uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
@@ -35,8 +43,11 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
-  typescript:
-    name: TypeScript
+      - name: sccache stats
+        run: sccache --show-stats
+
+  sdk-web:
+    name: Login SDK & web apps
     runs-on: ubuntu-latest
 
     steps:
@@ -63,9 +74,14 @@ jobs:
       - name: Test
         run: pnpm -r test
 
-  wasm:
-    name: WASM (browser + smoke)
+  browser-wallet:
+    name: Browser wallet (WASM)
     runs-on: ubuntu-latest
+
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
+      CARGO_INCREMENTAL: "0"
 
     steps:
       - uses: actions/checkout@v4
@@ -75,13 +91,19 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - name: Cache Rust build artifacts
+      - name: Compiler cache (sccache)
+        uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Cache cargo registry + git sources
         uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
 
+      # Cached prebuilt binary — avoids the curl install + recompile on every run.
       - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+        uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -96,16 +118,24 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Runner images ship Chrome + chromedriver, which wasm-pack picks up.
-      - name: Browser tests (headless Chrome)
+      - name: Browser wallet tests (headless Chrome)
         run: wasm-pack test --headless --chrome crates/pegin-wasm
 
-      # Part 2 (on-chain via coinset.org testnet11) self-skips when the
-      # repository secret/variable are unavailable, e.g. on fork PRs.
-      - name: Smoke test (Node, on-chain)
-        run: pnpm test:smoke
+      # One build step for both consumer targets: the bundler build reuses the
+      # release artifacts the node build just compiled (shared target dir).
+      - name: Build wasm packages (node + bundler)
+        run: pnpm build:wasm:node && pnpm build:wasm
+
+      # On-chain flow via coinset.org testnet11; self-skips when the repository
+      # secret/variable are unavailable, e.g. on fork PRs. No rebuild — uses pkg-node.
+      - name: On-chain smoke test (Node)
+        run: pnpm smoke
         env:
           PEGIN_MNEMONIC: ${{ secrets.PEGIN_MNEMONIC }}
           PEGIN_DID: ${{ vars.PEGIN_DID }}
 
-      - name: SDK tests against fresh wasm build
-        run: pnpm build:wasm && pnpm --filter @pegin/sdk test
+      - name: Login SDK tests against fresh wasm
+        run: pnpm --filter @pegin/sdk test
+
+      - name: sccache stats
+        run: sccache --show-stats
