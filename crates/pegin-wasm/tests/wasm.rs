@@ -3,8 +3,8 @@
 mod common;
 
 use common::{
-    alternate_test_phrase, deterministic_test_phrase, fresh_wallet_phrase, mnemonic_from_env,
-    DETERMINISTIC_DID_PK, DETERMINISTIC_WALLET_PK,
+    deterministic_test_phrase, fresh_wallet_phrase, mnemonic_from_env, DETERMINISTIC_DID_PK,
+    DETERMINISTIC_WALLET_PK,
 };
 use wasm_bindgen_test::*;
 wasm_bindgen_test_configure!(run_in_browser);
@@ -14,6 +14,7 @@ use pegin_wasm::{
 };
 
 const TEST_DID: &str = "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
+const TEST_AUD: &str = "https://demo.example";
 
 // ── Scaffold smoke test ─────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ fn sign_challenge_is_deterministic_in_browser() {
 #[wasm_bindgen_test]
 fn mint_and_verify_round_trip_in_browser() {
     let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
-    let token = mint_jwt(&keys, TEST_DID, 3600);
+    let token = mint_jwt(&keys, TEST_DID, TEST_AUD, 3600, None).expect("mint jwt");
 
     assert_eq!(
         token.split('.').count(),
@@ -102,27 +103,26 @@ fn mint_and_verify_round_trip_in_browser() {
         "JWT must have 3 dot-separated parts"
     );
 
-    assert!(verify_jwt(&token, &keys.did_public_key()));
+    assert!(verify_jwt(&token, TEST_AUD, None));
 }
 
 #[wasm_bindgen_test]
 fn tampered_jwt_fails_verification_in_browser() {
     let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
-    let token = mint_jwt(&keys, TEST_DID, 3600);
+    let token = mint_jwt(&keys, TEST_DID, TEST_AUD, 3600, None).expect("mint jwt");
     let parts: Vec<&str> = token.split('.').collect();
     // base64url of {"iss":"attacker","sub":"attacker","exp":9999999999}
     const EVIL_PAYLOAD: &str =
         "eyJpc3MiOiJhdHRhY2tlciIsInN1YiI6ImF0dGFja2VyIiwiZXhwIjo5OTk5OTk5OTk5fQ";
     let tampered = format!("{}.{}.{}", parts[0], EVIL_PAYLOAD, parts[2]);
-    assert!(!verify_jwt(&tampered, &keys.did_public_key()));
+    assert!(!verify_jwt(&tampered, TEST_AUD, None));
 }
 
 #[wasm_bindgen_test]
-fn wrong_public_key_fails_verification_in_browser() {
-    let keys_a = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
-    let keys_b = derive_wallet_keys(&alternate_test_phrase()).expect("valid mnemonic");
-    let token = mint_jwt(&keys_a, TEST_DID, 3600);
-    assert!(!verify_jwt(&token, &keys_b.did_public_key()));
+fn wrong_audience_fails_verification_in_browser() {
+    let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
+    let token = mint_jwt(&keys, TEST_DID, TEST_AUD, 3600, None).expect("mint jwt");
+    assert!(!verify_jwt(&token, "https://other.example", None));
 }
 
 // ── DID lookup (live coinset.org — manual only) ───────────────────────────────

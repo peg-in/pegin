@@ -3,7 +3,7 @@
  * Manual test CLI: mnemonic → BLS keys → on-chain DID lookup → self-signed JWT.
  * Runs the browser WASM in Node ≥ 20.12. Build first:
  *   wasm-pack build --target nodejs --out-dir pkg-node
- * Usage: node demo-cli.mjs [--peer-url url] [--ttl sec]
+ * Usage: node demo-cli.mjs [--peer-url url] [--ttl sec] [--aud origin]
  *        node demo-cli.mjs --skip-chain
  * Prints only the JWT on stdout; diagnostics need LOG_LEVEL=info (wiki: logging-strategy).
  * Mnemonic: PEGIN_MNEMONIC env var > .env next to script > hidden prompt.
@@ -33,11 +33,12 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
  * @returns {{peerUrl: string|null, ttl: number, skipChain?: boolean}}
  */
 function parseArgs(argv) {
-  const args = { ttl: 3600, peerUrl: null };
+  const args = { ttl: 3600, peerUrl: null, aud: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--ttl") args.ttl = Number(argv[++i]);
     else if (a === "--peer-url") args.peerUrl = argv[++i];
+    else if (a === "--aud") args.aud = argv[++i];
     else if (a === "--skip-chain") args.skipChain = true;
     else if (!a.startsWith("--")) {
       logger.error(`unexpected positional argument '${a}' — DID is resolved from keys, not CLI input`);
@@ -105,11 +106,12 @@ if (args.skipChain) {
   logger.info(`did: ${did} (verified on-chain)`);
 }
 
-const token = mintJwt(keys, did, args.ttl);
+const token = mintJwt(keys, did, args.aud ?? 'https://localhost', args.ttl);
 const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
 logger.info(`claims: ${JSON.stringify(payload)}`);
 
-if (!verifyJwt(token, keys.didPublicKey)) {
+const aud = args.aud ?? 'https://localhost';
+if (!verifyJwt(token, aud, undefined)) {
   logger.error("self-verification of the minted JWT failed");
   process.exit(1);
 }

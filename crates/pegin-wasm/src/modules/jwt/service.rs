@@ -1,82 +1,49 @@
-//! Self-signed JWT mint/verify with the DID BLS key (wallet-as-IdP).
+//! ES256K JWT mint/verify via shared `pegin-jwt` crate.
 
-use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
-use chia_bls::{sign, verify, PublicKey, Signature};
-use serde_json::{json, Value};
+use pegin_jwt::{mint_es256k, verify_token, JwtError};
 
 use crate::modules::keys::WalletKeys;
 
-/// Fixed JOSE header — BLS over G2 is the only Phase 1 algorithm.
-const JWT_HEADER: &str = r#"{"alg":"BLS12381_G2","typ":"JWT"}"#;
-
-/// Mints a compact JWT `header.payload.signature` (base64url). Infallible.
-///
-/// * `did` — fills the `iss` and `sub` claims
-/// * `ttl_seconds` — sets `exp` relative to now
-pub fn mint_jwt_inner(keys: &WalletKeys, did: &str, ttl_seconds: u32) -> String {
-    mint_jwt_at(keys, did, ttl_seconds, current_unix_secs())
+/// Mints an ES256K JWT bound to `aud` with optional replay-resistant `nonce`.
+pub fn mint_jwt_inner(
+    keys: &WalletKeys,
+    did: &str,
+    aud: &str,
+    ttl_seconds: u32,
+    nonce: Option<&str>,
+) -> Result<String, String> {
+    let did_pk_hex = hex::encode(keys.did_public_key());
+    mint_es256k(
+        &keys.did_sk,
+        did,
+        &did_pk_hex,
+        aud,
+        ttl_seconds,
+        nonce,
+        current_unix_secs(),
+    )
+    .map_err(|e| e.to_string())
 }
 
-/// Time-injectable core of [`mint_jwt_inner`] so tests can mint expired tokens.
-fn mint_jwt_at(keys: &WalletKeys, did: &str, ttl_seconds: u32, iat: u64) -> String {
-    let payload = json!({
-        "iss": did,
-        "sub": did,
-        "iat": iat,
-        "exp": iat + u64::from(ttl_seconds),
-    });
-
-    let signing_input = format!(
-        "{}.{}",
-        URL_SAFE_NO_PAD.encode(JWT_HEADER),
-        URL_SAFE_NO_PAD.encode(payload.to_string())
-    );
-    let sig: Signature = sign(&keys.did_sk, signing_input.as_bytes());
-    format!("{signing_input}.{}", URL_SAFE_NO_PAD.encode(sig.to_bytes()))
-}
-
-/// Verifies signature and expiry of a JWT minted by [`mint_jwt_inner`].
+/// Verifies an ES256K JWT minted by [`mint_jwt_inner`].
 ///
-/// * `did_public_key` — 48-byte BLS G1 public key
-/// * returns `Ok(false)` for expired, missing-`exp`, or bad-signature tokens
-/// * returns `Err` for malformed encodings
-pub fn verify_jwt_inner(token: &str, did_public_key: &[u8]) -> Result<bool, String> {
-    let [header_b64, payload_b64, sig_b64]: [&str; 3] = token
-        .split('.')
-        .collect::<Vec<_>>()
-        .try_into()
-        .map_err(|_| "JWT must have exactly 3 dot-separated parts".to_owned())?;
-
-    // Expiry first — skips the BLS work for stale tokens; mint always sets `exp`.
-    let payload_bytes = URL_SAFE_NO_PAD
-        .decode(payload_b64)
-        .map_err(|e| format!("invalid JWT payload encoding: {e}"))?;
-    let payload: Value = serde_json::from_slice(&payload_bytes)
-        .map_err(|e| format!("invalid JWT payload JSON: {e}"))?;
-    match payload.get("exp").and_then(Value::as_u64) {
-        Some(exp) if exp >= current_unix_secs() => {}
-        _ => return Ok(false),
+/// Returns `Ok(false)` for expired or bad-signature tokens; `Err` for malformed input.
+pub fn verify_jwt_inner(
+    token: &str,
+    expected_aud: &str,
+    expected_nonce: Option<&str>,
+) -> Result<bool, String> {
+    match verify_token(token, expected_aud, expected_nonce, current_unix_secs()) {
+        Ok(_) => Ok(true),
+        Err(
+            JwtError::Expired
+            | JwtError::InvalidSignature
+            | JwtError::AudienceMismatch { .. }
+            | JwtError::NonceMismatch
+            | JwtError::IssuerSubjectMismatch,
+        ) => Ok(false),
+        Err(e) => Err(e.to_string()),
     }
-
-    let sig_bytes = URL_SAFE_NO_PAD
-        .decode(sig_b64)
-        .map_err(|e| format!("invalid JWT signature encoding: {e}"))?;
-    let sig = Signature::from_bytes(&to_array::<96>(&sig_bytes, "JWT signature")?)
-        .map_err(|e| format!("invalid BLS signature: {e}"))?;
-
-    let pk = PublicKey::from_bytes(&to_array::<48>(did_public_key, "DID public key")?)
-        .map_err(|e| format!("invalid BLS public key: {e}"))?;
-
-    // The signing input is the token up to the last dot — slice it, no realloc.
-    let signing_input = &token[..header_b64.len() + 1 + payload_b64.len()];
-    Ok(verify(&sig, &pk, signing_input.as_bytes()))
-}
-
-/// Converts a decoded byte slice into the fixed-size array chia-bls expects.
-fn to_array<const N: usize>(bytes: &[u8], what: &str) -> Result<[u8; N], String> {
-    bytes
-        .try_into()
-        .map_err(|_| format!("{what} must be {N} bytes, got {}", bytes.len()))
 }
 
 /// Seconds since the Unix epoch — `Date.now()` in the browser, `SystemTime` natively.
@@ -98,79 +65,61 @@ fn current_unix_secs() -> u64 {
 mod tests {
     use super::*;
     use crate::modules::keys::service::derive_wallet_keys_inner;
-
-    use crate::test_util::{alternate_test_phrase, deterministic_test_phrase};
+    use crate::test_util::deterministic_test_phrase;
 
     const TEST_DID: &str =
         "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
+    const TEST_AUD: &str = "https://demo.example";
 
     #[test]
     fn mint_and_verify_round_trip() {
         let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
-        let token = mint_jwt_inner(&keys, TEST_DID, 3600);
-        assert!(verify_jwt_inner(&token, &keys.did_public_key()).unwrap());
+        let token = mint_jwt_inner(&keys, TEST_DID, TEST_AUD, 3600, None).unwrap();
+        assert!(verify_jwt_inner(&token, TEST_AUD, None).unwrap());
     }
 
     #[test]
-    fn payload_contains_iss_sub_iat_exp_only() {
+    fn payload_contains_aud_and_cnf() {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+        use serde_json::Value;
+
         let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
-        let token = mint_jwt_inner(&keys, TEST_DID, 3600);
+        let token = mint_jwt_inner(&keys, TEST_DID, TEST_AUD, 3600, Some("nonce-1")).unwrap();
         let payload_b64 = token.split('.').nth(1).unwrap();
         let payload: Value =
             serde_json::from_slice(&URL_SAFE_NO_PAD.decode(payload_b64).unwrap()).unwrap();
 
         assert_eq!(payload["iss"], TEST_DID);
         assert_eq!(payload["sub"], TEST_DID);
-        assert!(payload.get("iat").and_then(Value::as_u64).is_some());
-        assert!(payload.get("exp").and_then(Value::as_u64).is_some());
-        assert!(payload.get("aud").is_none());
+        assert_eq!(payload["aud"], TEST_AUD);
+        assert_eq!(payload["nonce"], "nonce-1");
+        assert!(payload.get("cnf").and_then(|c| c.get("did_pk")).is_some());
     }
 
     #[test]
     fn tampered_payload_fails_verification() {
+        use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+
         let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
-        let token = mint_jwt_inner(&keys, TEST_DID, 3600);
+        let token = mint_jwt_inner(&keys, TEST_DID, TEST_AUD, 3600, None).unwrap();
 
         let parts: Vec<&str> = token.split('.').collect();
         let evil_payload =
             URL_SAFE_NO_PAD.encode(r#"{"iss":"attacker","sub":"attacker","exp":9999999999}"#);
         let tampered = format!("{}.{}.{}", parts[0], evil_payload, parts[2]);
 
-        assert!(!verify_jwt_inner(&tampered, &keys.did_public_key()).unwrap());
+        assert!(!verify_jwt_inner(&tampered, TEST_AUD, None).unwrap());
     }
 
     #[test]
-    fn expired_jwt_fails_verification() {
+    fn wrong_audience_fails_verification() {
         let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
-        let token = mint_jwt_at(&keys, TEST_DID, 60, 1_000_000);
-        assert!(!verify_jwt_inner(&token, &keys.did_public_key()).unwrap());
-    }
-
-    #[test]
-    fn missing_exp_claim_fails_verification() {
-        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
-        let signing_input = format!(
-            "{}.{}",
-            URL_SAFE_NO_PAD.encode(JWT_HEADER),
-            URL_SAFE_NO_PAD.encode(r#"{"iss":"did:chia:test","sub":"did:chia:test"}"#)
-        );
-        let sig = sign(&keys.did_sk, signing_input.as_bytes());
-        let token = format!("{signing_input}.{}", URL_SAFE_NO_PAD.encode(sig.to_bytes()));
-
-        assert!(!verify_jwt_inner(&token, &keys.did_public_key()).unwrap());
-    }
-
-    #[test]
-    fn different_key_fails_verification() {
-        let keys_a = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
-        let keys_b = derive_wallet_keys_inner(&alternate_test_phrase()).unwrap();
-        let token = mint_jwt_inner(&keys_a, TEST_DID, 3600);
-        assert!(!verify_jwt_inner(&token, &keys_b.did_public_key()).unwrap());
+        let token = mint_jwt_inner(&keys, TEST_DID, TEST_AUD, 3600, None).unwrap();
+        assert!(!verify_jwt_inner(&token, "https://other.example", None).unwrap());
     }
 
     #[test]
     fn malformed_token_is_an_error() {
-        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
-        assert!(verify_jwt_inner("not-a-jwt", &keys.did_public_key()).is_err());
+        assert!(verify_jwt_inner("not-a-jwt", TEST_AUD, None).is_err());
     }
 }

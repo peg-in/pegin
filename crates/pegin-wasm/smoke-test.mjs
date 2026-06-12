@@ -24,6 +24,8 @@ import {
   verifyJwt,
 } from "./pkg-node/pegin_wasm.js";
 
+const TEST_AUD = "https://smoke.example";
+
 const envFile = join(dirname(fileURLToPath(import.meta.url)), ".env");
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
@@ -62,21 +64,26 @@ await test("challenge signature is 96 bytes and deterministic", () => {
 });
 
 const fakeDid = "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
-const token = mintJwt(keys, fakeDid, 600);
+const token = mintJwt(keys, fakeDid, TEST_AUD, 600);
 
-await test("minted JWT verifies against its own DID key", () => {
-  assert.equal(verifyJwt(token, keys.didPublicKey), true);
+await test("minted ES256K JWT verifies for the bound audience", () => {
+  assert.equal(verifyJwt(token, TEST_AUD, undefined), true);
 });
 
 await test("tampered JWT payload fails verification", () => {
   const [header, , sig] = token.split(".");
   const evil = Buffer.from('{"iss":"attacker","exp":9999999999}').toString("base64url");
-  assert.equal(verifyJwt(`${header}.${evil}.${sig}`, keys.didPublicKey), false);
+  assert.equal(verifyJwt(`${header}.${evil}.${sig}`, TEST_AUD, undefined), false);
 });
 
-await test("JWT fails verification with a different key", () => {
-  const other = deriveWalletKeys(alternateTestPhrase());
-  assert.equal(verifyJwt(token, other.didPublicKey), false);
+await test("JWT fails verification for a different audience", () => {
+  assert.equal(verifyJwt(token, "https://other.example", undefined), false);
+});
+
+await test("JWT with embedded nonce verifies when nonce matches", () => {
+  const nonce = "smoke-nonce-1";
+  const withNonce = mintJwt(keys, fakeDid, TEST_AUD, 600, nonce);
+  assert.equal(verifyJwt(withNonce, TEST_AUD, nonce), true);
 });
 
 out("\nPart 2 — personal testnet wallet (on-chain via coinset.org)");
@@ -100,8 +107,8 @@ if (!PEGIN_MNEMONIC || !PEGIN_DID) {
     });
 
     await test("personal JWT mints and verifies", () => {
-      const myToken = mintJwt(myKeys, myDid, 600);
-      assert.equal(verifyJwt(myToken, myKeys.didPublicKey), true);
+      const myToken = mintJwt(myKeys, myDid, TEST_AUD, 600);
+      assert.equal(verifyJwt(myToken, TEST_AUD, undefined), true);
     });
   }
 }
