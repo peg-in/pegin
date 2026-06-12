@@ -1,0 +1,37 @@
+[package]
+name    = "pegin-verify"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+workspace = true
+
+[dependencies]
+pegin-jwt  = { workspace = true }
+chia-bls   = { workspace = true }
+bech32     = { workspace = true }
+hex        = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+reqwest    = { workspace = true }
+thiserror  = { workspace = true }
+
+# DID singleton parsing for on-chain owner verification. Pinned to the 0.20 chia
+# line that chia-wallet-sdk 0.23 bundles so Coin/PublicKey/TreeHash types agree
+# across `Did::parse_child` (independent of the workspace's 0.25 pins).
+chia-wallet-sdk   = "0.23"
+chia-puzzle-types = "0.20"
+tokio      = { workspace = true }
+axum       = "0.7"
+getrandom  = "0.2"
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[[bin]]
+name = "pegin-auth-server"
+path = "src/bin/pegin-auth-server.rs"
+
+[[bin]]
+name = "did-owner"
+path = "src/bin/did-owner.rs"
