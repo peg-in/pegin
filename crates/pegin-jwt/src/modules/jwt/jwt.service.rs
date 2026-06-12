@@ -168,16 +168,10 @@ fn validate_claims(
     if payload.iss != payload.sub {
         return Err(JwtError::IssuerSubjectMismatch);
     }
-    if !payload.aud.is_empty() && payload.aud != expected_aud {
+    if payload.aud != expected_aud {
         return Err(JwtError::AudienceMismatch {
             expected: expected_aud.to_owned(),
             actual: payload.aud.clone(),
-        });
-    }
-    if payload.aud.is_empty() && !expected_aud.is_empty() {
-        return Err(JwtError::AudienceMismatch {
-            expected: expected_aud.to_owned(),
-            actual: String::new(),
         });
     }
     match (expected_nonce, payload.nonce.as_deref()) {
@@ -270,7 +264,7 @@ mod tests {
     use chia_bls::SecretKey;
 
     use super::*;
-    use crate::modules::jwt::jwt_helper::es256k_signing_key;
+    use crate::modules::jwt::jwt_helper::{bls_header, es256k_signing_key};
 
     fn test_did_sk() -> SecretKey {
         SecretKey::from_bytes(&[7u8; 32]).expect("valid test key")
@@ -318,6 +312,47 @@ mod tests {
         .expect("mint");
         let err = verify_token(&token, "https://b.example", None, 1).unwrap_err();
         assert!(matches!(err, JwtError::AudienceMismatch { .. }));
+    }
+
+    #[test]
+    fn expired_token_is_rejected() {
+        let did_sk = test_did_sk();
+        let did_pk_hex = hex::encode(did_sk.public_key().to_bytes());
+        let token = mint_es256k(
+            &did_sk,
+            "did:chia:test",
+            &did_pk_hex,
+            "https://a.example",
+            60,
+            None,
+            1_000_000,
+        )
+        .expect("mint");
+        let err = verify_token(&token, "https://a.example", None, 1_000_061).unwrap_err();
+        assert!(matches!(err, JwtError::Expired));
+    }
+
+    #[test]
+    fn legacy_token_missing_exp_is_rejected() {
+        let did_sk = test_did_sk();
+        let payload = json!({ "iss": "did:chia:test", "sub": "did:chia:test", "iat": 1 });
+        let payload_b64 = URL_SAFE_NO_PAD.encode(payload.to_string());
+        let signing_input = format!("{}.{payload_b64}", bls_header());
+        let sig = sign(&did_sk, signing_input.as_bytes());
+        let token = format!("{signing_input}.{}", URL_SAFE_NO_PAD.encode(sig.to_bytes()));
+        let err =
+            verify_bls_legacy_with_pubkey(&token, &did_sk.public_key().to_bytes(), 1).unwrap_err();
+        assert!(matches!(err, JwtError::InvalidToken(_)));
+    }
+
+    #[test]
+    fn expired_legacy_token_fails_verification() {
+        let did_sk = test_did_sk();
+        let token = mint_bls_legacy(&did_sk, "did:chia:test", 60, 1_000_000);
+        let valid =
+            verify_bls_legacy_with_pubkey(&token, &did_sk.public_key().to_bytes(), 2_000_000)
+                .expect("verify");
+        assert!(!valid);
     }
 
     #[test]

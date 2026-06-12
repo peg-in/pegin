@@ -32,29 +32,31 @@ pub async fn verify_login(input: VerifyLoginInput<'_>) -> Result<VerifiedLogin, 
     let now = input.now.unwrap_or_else(current_unix_secs);
     let jwt = verify_token(input.jwt, input.expected_aud, input.challenge_nonce, now)?;
 
-    if let Some(nonce) = input.challenge_nonce {
-        let sig = input
-            .challenge_sig_hex
-            .ok_or(VerifyError::ChallengeRequired)?;
+    if input.challenge_nonce.is_some() || input.coinset.is_some() {
         let pk_bytes =
             hex::decode(&jwt.did_pk_hex).map_err(|e| VerifyError::InvalidDid(e.to_string()))?;
-        verify_challenge_signature(&pk_bytes, nonce, sig)
-            .map_err(|_| VerifyError::ChallengeInvalid)?;
-    }
 
-    if let Some(client) = input.coinset {
-        // Bind cnf.did_pk to the DID's on-chain owner — not just existence. Fail-closed:
-        // any coinset/parse error propagates as Err, so an incomplete proof rejects the login.
-        let launcher = launcher_id_hex(&jwt.did).map_err(VerifyError::InvalidDid)?;
-        let pk_bytes: [u8; 48] = hex::decode(&jwt.did_pk_hex)
-            .ok()
-            .and_then(|b| b.try_into().ok())
-            .ok_or_else(|| VerifyError::InvalidDid("cnf.did_pk must be 48-byte hex".to_owned()))?;
-        let owned = verify_did_owner(&client, &launcher, &pk_bytes)
-            .await
-            .map_err(VerifyError::Coinset)?;
-        if !owned {
-            return Err(VerifyError::DidNotOwned);
+        if let Some(nonce) = input.challenge_nonce {
+            let sig = input
+                .challenge_sig_hex
+                .ok_or(VerifyError::ChallengeRequired)?;
+            verify_challenge_signature(&pk_bytes, nonce, sig)
+                .map_err(|_| VerifyError::ChallengeInvalid)?;
+        }
+
+        if let Some(client) = input.coinset {
+            // Bind cnf.did_pk to the DID's on-chain owner — not just existence. Fail-closed:
+            // any coinset/parse error propagates as Err, so an incomplete proof rejects the login.
+            let launcher = launcher_id_hex(&jwt.did).map_err(VerifyError::InvalidDid)?;
+            let pk_bytes: [u8; 48] = pk_bytes.as_slice().try_into().map_err(|_| {
+                VerifyError::InvalidDid("cnf.did_pk must be 48-byte hex".to_owned())
+            })?;
+            let owned = verify_did_owner(&client, &launcher, &pk_bytes)
+                .await
+                .map_err(VerifyError::Coinset)?;
+            if !owned {
+                return Err(VerifyError::DidNotOwned);
+            }
         }
     }
 

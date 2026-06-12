@@ -74,16 +74,10 @@ struct SessionResponse {
 
 #[tokio::main]
 async fn main() {
-    let port: u16 = std::env::var("PEGIN_AUTH_PORT")
-        .ok()
-        .and_then(|p| p.parse().ok())
-        .unwrap_or(8787);
+    let port: u16 = env_parse("PEGIN_AUTH_PORT", 8787);
     let coinset_url = std::env::var("PEGIN_COINSET_URL")
         .unwrap_or_else(|_| "https://testnet11.api.coinset.org".to_owned());
-    let session_ttl = std::env::var("PEGIN_SESSION_TTL")
-        .ok()
-        .and_then(|t| t.parse().ok())
-        .unwrap_or(3600);
+    let session_ttl = env_parse("PEGIN_SESSION_TTL", 3600);
 
     let state = Arc::new(AppState {
         pending: Mutex::new(HashMap::new()),
@@ -264,12 +258,7 @@ fn set_cookie(value: &str, max_age: u64, secure: bool) -> String {
 }
 
 fn clear_cookie(secure: bool) -> String {
-    let base = format!("{SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0");
-    if secure {
-        format!("{base}; Secure")
-    } else {
-        base
-    }
+    set_cookie("", 0, secure)
 }
 
 fn purge_expired(state: &AppState) {
@@ -284,6 +273,13 @@ fn purge_expired(state: &AppState) {
         .lock()
         .expect("lock")
         .retain(|_, s| s.expires_at >= now);
+}
+
+fn env_parse<T: std::str::FromStr>(key: &str, default: T) -> T {
+    std::env::var(key)
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(default)
 }
 
 fn now_secs() -> u64 {
