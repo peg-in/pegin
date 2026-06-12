@@ -19,15 +19,18 @@ pub async fn login_with_seed_inner(
 
     #[cfg(target_arch = "wasm32")]
     {
-        use crate::modules::did::service::get_did_for_keys_inner;
-        use crate::modules::jwt::service::mint_jwt_inner;
-        use crate::modules::signing::service::sign_challenge_inner;
+        use crate::modules::did::service::get_did_owner_for_keys_inner;
+        use crate::modules::jwt::service::mint_jwt_with_sk;
+        use crate::modules::signing::service::sign_challenge_with_sk;
 
-        let did = get_did_for_keys_inner(&keys, peer_url)
+        // Resolve the DID and the wallet address key that owns it on-chain, then mint/sign
+        // with that owner key so cnf.did_pk binds to the DID's owner puzzle (feat-17).
+        let (did, owner_index) = get_did_owner_for_keys_inner(&keys, peer_url)
             .await?
             .ok_or_else(|| NO_DID_ON_CHAIN.to_owned())?;
-        let challenge_sig = challenge_nonce.map(|nonce| sign_challenge_inner(&keys, nonce));
-        let jwt = mint_jwt_inner(&keys, &did, aud, ttl_seconds, challenge_nonce)?;
+        let owner_sk = keys.owner_secret_at(owner_index);
+        let challenge_sig = challenge_nonce.map(|nonce| sign_challenge_with_sk(&owner_sk, nonce));
+        let jwt = mint_jwt_with_sk(&owner_sk, &did, aud, ttl_seconds, challenge_nonce)?;
         Ok((did, jwt, challenge_sig))
     }
 
@@ -46,9 +49,15 @@ mod tests {
 
     #[tokio::test]
     async fn native_stub_rejects_login() {
-        let err = login_with_seed_inner(&deterministic_test_phrase(), None, 3600, "https://app", None)
-            .await
-            .unwrap_err();
+        let err = login_with_seed_inner(
+            &deterministic_test_phrase(),
+            None,
+            3600,
+            "https://app",
+            None,
+        )
+        .await
+        .unwrap_err();
         assert!(err.contains("browser WASM"));
     }
 

@@ -1,20 +1,22 @@
 //! ES256K JWT mint/verify via shared `pegin-jwt` crate.
 
+use chia_bls::SecretKey;
 use pegin_jwt::{mint_es256k, verify_token, JwtError};
 
 use crate::modules::keys::WalletKeys;
 
-/// Mints an ES256K JWT bound to `aud` with optional replay-resistant `nonce`.
-pub fn mint_jwt_inner(
-    keys: &WalletKeys,
+/// Mints an ES256K JWT signed by `signing_sk`, embedding its public key as `cnf.did_pk`.
+/// The relying party binds that key to the on-chain DID owner.
+pub fn mint_jwt_with_sk(
+    signing_sk: &SecretKey,
     did: &str,
     aud: &str,
     ttl_seconds: u32,
     nonce: Option<&str>,
 ) -> Result<String, String> {
-    let did_pk_hex = hex::encode(keys.did_public_key());
+    let did_pk_hex = hex::encode(signing_sk.public_key().to_bytes());
     mint_es256k(
-        &keys.did_sk,
+        signing_sk,
         did,
         &did_pk_hex,
         aud,
@@ -23,6 +25,18 @@ pub fn mint_jwt_inner(
         current_unix_secs(),
     )
     .map_err(|e| e.to_string())
+}
+
+/// Mints an ES256K JWT bound to `aud` with optional replay-resistant `nonce`,
+/// signed with the DID-path key (standalone helper; login uses the owner key).
+pub fn mint_jwt_inner(
+    keys: &WalletKeys,
+    did: &str,
+    aud: &str,
+    ttl_seconds: u32,
+    nonce: Option<&str>,
+) -> Result<String, String> {
+    mint_jwt_with_sk(&keys.did_sk, did, aud, ttl_seconds, nonce)
 }
 
 /// Verifies an ES256K JWT minted by [`mint_jwt_inner`].

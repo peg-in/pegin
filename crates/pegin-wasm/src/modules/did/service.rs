@@ -1,7 +1,7 @@
 //! DID lookup: derive puzzle hash from wallet keys → coinset.org → `did:chia:…`.
 #![cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
 
-use chia_bls::DerivableKey;
+use chia_bls::{DerivableKey, PublicKey};
 use chia_protocol::Bytes32;
 use chia_puzzle_types::standard::StandardArgs;
 use chia_puzzle_types::DeriveSynthetic;
@@ -83,23 +83,66 @@ async fn lookup_did_with_hints<C: CoinsetClient>(
     encode_did(&launcher_id).map(Some)
 }
 
+/// Observer indices scanned per coinset round-trip. The owning index is identified within the
+/// hit batch, so a small batch keeps both the BLS derivation work and the identifying queries low.
+const OWNER_SCAN_BATCH: u32 = 16;
+
+/// Resolves the DID **and the observer index that owns it** — the address key whose synthetic
+/// p2 puzzle is the DID's on-chain owner, so login can sign/bind with that key.
+///
+/// Scans observer indices in small batches and returns at the first hit, so a wallet whose DID
+/// sits at a low index (the common case) derives ~`OWNER_SCAN_BATCH` keys instead of all 500 and
+/// makes ~2 queries — not a full-range derivation on every login.
+pub async fn resolve_did_and_owner<C: CoinsetClient>(
+    client: &C,
+    keys: &WalletKeys,
+) -> Result<Option<(String, u32)>, String> {
+    let obs = keys.observer_intermediate_pk();
+    let mut start = 0;
+    while start < HINT_SCAN_LIMIT {
+        let end = (start + OWNER_SCAN_BATCH).min(HINT_SCAN_LIMIT);
+        let hints: Vec<String> = (start..end).map(|i| observer_hint_at(&obs, i)).collect();
+        let records = client.get_coin_records_by_hints(&hints).await?;
+        if records.len() > MAX_HINT_RECORDS {
+            return Err("coinset returned too many coin records".to_owned());
+        }
+        if pick_unspent_did_record(&records).is_some() {
+            // The batch carries an owned DID — pin the exact index with single-hint queries.
+            for index in start..end {
+                let hint = observer_hint_at(&obs, index);
+                let one = client.get_coin_records_by_hints(&[hint]).await?;
+                if let Some(record) = pick_unspent_did_record(&one) {
+                    let launcher_id = find_launcher_id(client, &coin_id_hex(record)?).await?;
+                    return Ok(Some((encode_did(&launcher_id)?, index)));
+                }
+            }
+        }
+        start = end;
+    }
+    // No address key owns an unspent DID coin (no DID, or DID-path custody).
+    Ok(None)
+}
+
 fn quick_scan_hints(keys: &WalletKeys) -> Vec<String> {
+    let obs = keys.observer_intermediate_pk();
     let mut hints = Vec::with_capacity(HINT_QUICK_SCAN_OBSERVER_MAX as usize + 2);
     hints.push(hint_hex(did_puzzle_hash_from_wallet(keys)));
-    hints.extend((0..=HINT_QUICK_SCAN_OBSERVER_MAX).map(|i| observer_hint_at(keys, i)));
+    hints.extend((0..=HINT_QUICK_SCAN_OBSERVER_MAX).map(|i| observer_hint_at(&obs, i)));
     hints
 }
 
 fn remaining_hints(keys: &WalletKeys) -> Vec<String> {
+    let obs = keys.observer_intermediate_pk();
     let start = HINT_QUICK_SCAN_OBSERVER_MAX + 1;
     (start..HINT_SCAN_LIMIT)
-        .map(|i| observer_hint_at(keys, i))
+        .map(|i| observer_hint_at(&obs, i))
         .collect()
 }
 
-fn observer_hint_at(keys: &WalletKeys, index: u32) -> String {
-    let pk = keys
-        .observer_intermediate_pk
+/// Address-hint puzzle hash for observer `index`: `StandardArgs(synthetic(obs/index))`.
+/// This is also the DID's on-chain owner p2 hash when the wallet owns the DID at that index.
+fn observer_hint_at(observer_intermediate_pk: &PublicKey, index: u32) -> String {
+    let pk = observer_intermediate_pk
         .derive_unhardened(index)
         .derive_synthetic();
     hint_hex(StandardArgs::curry_tree_hash(pk).into())
@@ -197,6 +240,27 @@ pub async fn get_did_for_keys_inner(
     _peer_url: Option<&str>,
 ) -> Result<Option<String>, String> {
     // Native builds have no HTTP client; browser WASM performs the live lookup.
+    std::future::ready(Ok(None)).await
+}
+
+/// Login-path resolver: returns the DID and its owning observer index.
+#[cfg(target_arch = "wasm32")]
+pub async fn get_did_owner_for_keys_inner(
+    keys: &WalletKeys,
+    peer_url: Option<&str>,
+) -> Result<Option<(String, u32)>, String> {
+    use super::helper::rest_base_url;
+    use super::peer::CoinsetRestClient;
+
+    let client = CoinsetRestClient::new(rest_base_url(peer_url)?)?;
+    resolve_did_and_owner(&client, keys).await
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+pub async fn get_did_owner_for_keys_inner(
+    _keys: &WalletKeys,
+    _peer_url: Option<&str>,
+) -> Result<Option<(String, u32)>, String> {
     std::future::ready(Ok(None)).await
 }
 
@@ -398,6 +462,44 @@ mod tests {
             2,
             "late observer index requires the second hint scan phase"
         );
+    }
+
+    #[tokio::test]
+    async fn resolve_did_and_owner_returns_owning_index() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        // DID hinted to observer index 0 (the wallet's first address) — the owner.
+        let observer0_hint = candidate_hints(&keys)[1].clone();
+        let launcher_name = format!("0x{LAUNCHER_HEX}");
+        let did_coin = record(&launcher_name, NON_LAUNCHER_PH, false, 200);
+        let did_coin_name = coin_id_hex(&did_coin).unwrap();
+
+        let client = MockClient::new()
+            .with_hint(&observer0_hint, vec![did_coin.clone()])
+            .with_coin(&did_coin_name, did_coin)
+            .with_coin(
+                &launcher_name,
+                record("0x00", &format!("0x{SINGLETON_LAUNCHER_PH}"), true, 100),
+            );
+
+        let (did, index) = resolve_did_and_owner(&client, &keys)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(did, encode_did(LAUNCHER_HEX).unwrap());
+        assert_eq!(
+            index, 0,
+            "owner index must be the address that hints the DID"
+        );
+    }
+
+    #[tokio::test]
+    async fn resolve_did_and_owner_is_none_without_did() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        let client = MockClient::new();
+        assert!(resolve_did_and_owner(&client, &keys)
+            .await
+            .unwrap()
+            .is_none());
     }
 
     #[tokio::test]

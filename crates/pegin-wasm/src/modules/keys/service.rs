@@ -36,8 +36,7 @@ pub fn derive_wallet_keys_inner(mnemonic: &str) -> Result<WalletKeys, String> {
         &master_sk,
         &[PATH_PURPOSE, PATH_COIN_TYPE, PATH_DID, PATH_INDEX],
     );
-    let observer_intermediate_pk = master_sk
-        .public_key()
+    let observer_intermediate_sk = master_sk
         .derive_unhardened(PATH_PURPOSE)
         .derive_unhardened(PATH_COIN_TYPE)
         .derive_unhardened(PATH_WALLET);
@@ -46,7 +45,7 @@ pub fn derive_wallet_keys_inner(mnemonic: &str) -> Result<WalletKeys, String> {
     Ok(WalletKeys {
         wallet_sk,
         did_sk,
-        observer_intermediate_pk,
+        observer_intermediate_sk,
     })
 }
 
@@ -131,7 +130,7 @@ mod tests {
             .derive_unhardened(PATH_WALLET);
 
         assert_eq!(
-            keys.observer_intermediate_pk.to_bytes(),
+            keys.observer_intermediate_pk().to_bytes(),
             expected.to_bytes(),
             "observer hints must come from the live master key, not a zeroed copy"
         );

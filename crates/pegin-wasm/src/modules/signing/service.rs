@@ -1,16 +1,21 @@
 //! BLS signing — DID challenge proofs and spend bundle signatures.
 
-use chia_bls::{aggregate, sign, Signature};
+use chia_bls::{aggregate, sign, SecretKey, Signature};
 use chia_protocol::SpendBundle;
 use chia_traits::streamable::Streamable;
 
 use crate::modules::keys::WalletKeys;
 
-/// Signs a UTF-8 challenge string with the DID key using BLS `AugSchemeMPL`.
-/// Returns the 96-byte signature as lowercase hex.
-pub fn sign_challenge_inner(keys: &WalletKeys, challenge: &str) -> String {
-    let sig: Signature = sign(&keys.did_sk, challenge.as_bytes());
+/// Signs a UTF-8 challenge with an explicit key using BLS `AugSchemeMPL` (96-byte hex).
+/// Login passes the DID owner key so the proof binds to the on-chain owner.
+pub fn sign_challenge_with_sk(sk: &SecretKey, challenge: &str) -> String {
+    let sig: Signature = sign(sk, challenge.as_bytes());
     hex::encode(sig.to_bytes())
+}
+
+/// Signs a UTF-8 challenge string with the DID key (standalone helper).
+pub fn sign_challenge_inner(keys: &WalletKeys, challenge: &str) -> String {
+    sign_challenge_with_sk(&keys.did_sk, challenge)
 }
 
 /// Signs a `SpendBundle` (Chia streamable bytes) with the wallet key.

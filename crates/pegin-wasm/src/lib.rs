@@ -85,6 +85,8 @@ pub async fn get_did(
 /// * `ttl_seconds` — lifetime from now; sets the `exp` claim
 /// * `nonce` — optional server nonce embedded in the JWT for replay resistance
 #[wasm_bindgen(js_name = mintJwt)]
+// wasm-bindgen marshals JS `string | null` as an owned `Option<String>`, not `Option<&str>`.
+#[allow(clippy::needless_pass_by_value)]
 pub fn mint_jwt(
     keys: &WalletKeys,
     did: &str,
@@ -102,11 +104,9 @@ pub fn mint_jwt(
 /// * `expected_nonce` — when set, must match the token `nonce` claim
 /// * returns `false` for expired, tampered, or bad-signature tokens
 #[wasm_bindgen(js_name = verifyJwt)]
-pub fn verify_jwt(
-    token: &str,
-    expected_aud: &str,
-    expected_nonce: Option<String>,
-) -> bool {
+// wasm-bindgen marshals JS `string | null` as an owned `Option<String>`, not `Option<&str>`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn verify_jwt(token: &str, expected_aud: &str, expected_nonce: Option<String>) -> bool {
     modules::jwt::service::verify_jwt_inner(token, expected_aud, expected_nonce.as_deref())
         .unwrap_or(false)
 }

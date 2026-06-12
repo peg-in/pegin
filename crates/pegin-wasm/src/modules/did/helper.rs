@@ -128,7 +128,10 @@ mod tests {
 
     #[test]
     fn rest_base_url_maps_ws_peer_to_https_api() {
-        assert_eq!(rest_base_url(Some(DEFAULT_PEER_WS)).unwrap(), DEFAULT_REST_BASE);
+        assert_eq!(
+            rest_base_url(Some(DEFAULT_PEER_WS)).unwrap(),
+            DEFAULT_REST_BASE
+        );
         assert_eq!(
             rest_base_url(Some("https://testnet11.api.coinset.org")).unwrap(),
             "https://testnet11.api.coinset.org"

@@ -1,4 +1,4 @@
-use chia_bls::{PublicKey, SecretKey};
+use chia_bls::{DerivableKey, PublicKey, SecretKey};
 use wasm_bindgen::prelude::*;
 
 use super::helper::zeroize_secret_key;
@@ -6,21 +6,39 @@ use super::helper::zeroize_secret_key;
 /// BLS keys derived from a BIP39 mnemonic.
 /// Secret keys never leave Rust memory — only public key bytes cross into JS.
 /// On `free()` or drop, wallet/DID scalars are zeroed before deallocation.
+// The `_sk` suffix marks secret keys (vs derived public keys); it is meaningful, not noise.
+#[allow(clippy::struct_field_names)]
 #[wasm_bindgen]
 pub struct WalletKeys {
     /// Wallet path m/12381/8444/2/0 — used for spend bundle signing.
     pub(crate) wallet_sk: SecretKey,
     /// DID path m/12381/8444/3/0 — used for challenge signing and DID proofs.
     pub(crate) did_sk: SecretKey,
-    /// Unhardened (observer) public key at m/12381/8444/2 — derives the wallet's
-    /// address puzzle hashes, which wallets attach as hints to DID coins.
-    pub(crate) observer_intermediate_pk: PublicKey,
+    /// Unhardened (observer) secret key at m/12381/8444/2 — derives the wallet's
+    /// address keys, which own the DID singleton (its on-chain owner puzzle is the
+    /// standard p2 of the synthetic address key). Children of this sign DID proofs.
+    pub(crate) observer_intermediate_sk: SecretKey,
 }
 
 impl Drop for WalletKeys {
     fn drop(&mut self) {
         zeroize_secret_key(&mut self.wallet_sk);
         zeroize_secret_key(&mut self.did_sk);
+        zeroize_secret_key(&mut self.observer_intermediate_sk);
+    }
+}
+
+impl WalletKeys {
+    /// Unhardened observer public key at m/12381/8444/2 — derives address hints.
+    pub(crate) fn observer_intermediate_pk(&self) -> PublicKey {
+        self.observer_intermediate_sk.public_key()
+    }
+
+    /// Raw secret key of the wallet address at observer `index` — the DID owner key.
+    /// Used only by the browser login path; native builds never sign DID proofs.
+    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    pub(crate) fn owner_secret_at(&self, index: u32) -> SecretKey {
+        self.observer_intermediate_sk.derive_unhardened(index)
     }
 }
 
