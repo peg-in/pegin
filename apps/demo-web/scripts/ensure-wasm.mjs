@@ -31,7 +31,20 @@ function needsRebuild() {
   return newestMtimeMs(CRATE_SRC) > wasmMtime
 }
 
+function wasmPackAvailable() {
+  try {
+    execSync('wasm-pack --version', { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+}
+
 if (needsRebuild()) {
+  if (!wasmPackAvailable()) {
+    process.stdout.write('wasm-pack not installed — skipping browser WASM rebuild\n')
+    process.exit(0)
+  }
   process.stdout.write('pegin-wasm sources changed — rebuilding browser WASM…\n')
   execSync('pnpm build:wasm', { cwd: ROOT, stdio: 'inherit' })
 }
