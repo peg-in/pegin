@@ -45,12 +45,11 @@ mod tests {
     use super::*;
     use crate::modules::keys::service::derive_wallet_keys_inner;
 
-    const TEST_MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon \
-         abandon abandon abandon abandon abandon about";
+    use crate::test_util::deterministic_test_phrase;
 
     #[test]
     fn sign_challenge_produces_valid_bls_signature() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         let challenge = "test-server-nonce-abc123";
 
         let sig_hex = sign_challenge_inner(&keys, challenge);
@@ -67,7 +66,7 @@ mod tests {
 
     #[test]
     fn sign_challenge_is_deterministic() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         let a = sign_challenge_inner(&keys, "challenge");
         let b = sign_challenge_inner(&keys, "challenge");
         assert_eq!(a, b);
@@ -75,7 +74,7 @@ mod tests {
 
     #[test]
     fn sign_challenge_differs_for_different_inputs() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         let a = sign_challenge_inner(&keys, "challenge-a");
         let b = sign_challenge_inner(&keys, "challenge-b");
         assert_ne!(a, b);

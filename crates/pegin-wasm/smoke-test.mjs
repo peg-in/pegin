@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Smoke test for the pegin-wasm Node build. Never prints the mnemonic.
- *   Part 1 — public throwaway mnemonic, offline, always runs.
+ *   Part 1 — deterministic zero-entropy phrase, offline, always runs.
  *   Part 2 — real on-chain flow with a personal testnet wallet; runs when
  *            PEGIN_MNEMONIC and PEGIN_DID are set (env vars > .env), else skips.
  * Build first: wasm-pack build --target nodejs --out-dir pkg-node
@@ -11,6 +11,11 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  alternateTestPhrase,
+  deterministicTestPhrase,
+  DETERMINISTIC_DID_PK,
+} from "./test-support/deterministic-phrase.mjs";
 import {
   deriveWalletKeys,
   getDid,
@@ -25,12 +30,6 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 // Reporter output is the program's product — stdout/stderr, not logging.
 const out = (line) => process.stdout.write(`${line}\n`);
 const err = (line) => process.stderr.write(`${line}\n`);
-
-// Public BIP39 test vector and the DID public key it must always derive.
-const THROWAWAY_MNEMONIC =
-  "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-const THROWAWAY_DID_PK =
-  "aee8545e9cef0270cb54069a9ed81a6b1e657f68ee7e102853a0887df68f28455b79a14f86823a2b81eacc29af9d9b85";
 
 let failures = 0;
 /**
@@ -48,12 +47,12 @@ async function test(name, fn) {
   }
 }
 
-out("Part 1 — throwaway mnemonic (offline, deterministic)");
+out("Part 1 — deterministic test phrase (offline, zero-entropy)");
 
-const keys = deriveWalletKeys(THROWAWAY_MNEMONIC);
+const keys = deriveWalletKeys(deterministicTestPhrase());
 
 await test("derives the known DID public key", () => {
-  assert.equal(keys.didPkHex, THROWAWAY_DID_PK);
+  assert.equal(keys.didPkHex, DETERMINISTIC_DID_PK);
 });
 
 await test("challenge signature is 96 bytes and deterministic", () => {
@@ -76,9 +75,7 @@ await test("tampered JWT payload fails verification", () => {
 });
 
 await test("JWT fails verification with a different key", () => {
-  const other = deriveWalletKeys(
-    "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"
-  );
+  const other = deriveWalletKeys(alternateTestPhrase());
   assert.equal(verifyJwt(token, other.didPublicKey), false);
 });
 

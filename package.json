@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "build:wasm": "wasm-pack build crates/pegin-wasm --target bundler --out-dir ../../packages/sdk/wasm",
+    "build:wasm": "wasm-pack build crates/pegin-wasm --target web --out-dir ../../packages/sdk/wasm",
     "build:wasm:node": "wasm-pack build crates/pegin-wasm --target nodejs --out-dir pkg-node",
     "build": "pnpm build:wasm && cargo build --workspace && pnpm -r build",
     "test": "cargo test --workspace && pnpm -r test",
@@ -20,6 +20,7 @@
     "format": "cargo fmt --all && pnpm exec prettier --write \"**/*.{ts,tsx}\""
   },
   "devDependencies": {
+    "@scure/bip39": "^1.6.0",
     "eslint": "^10.4.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",

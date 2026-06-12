@@ -3,6 +3,13 @@
 
 mod modules;
 
+#[cfg(test)]
+#[path = "../test_vectors.rs"]
+mod test_vectors;
+
+#[cfg(test)]
+mod test_util;
+
 use wasm_bindgen::prelude::*;
 
 pub use modules::keys::WalletKeys;
@@ -87,6 +94,31 @@ pub fn mint_jwt(keys: &WalletKeys, did: &str, ttl_seconds: u32) -> String {
 #[wasm_bindgen(js_name = verifyJwt)]
 pub fn verify_jwt(token: &str, did_public_key: &[u8]) -> bool {
     modules::jwt::service::verify_jwt_inner(token, did_public_key).unwrap_or(false)
+}
+
+/// Derives keys, resolves the on-chain DID, and mints a JWT entirely inside WASM.
+///
+/// * `mnemonic` — BIP39 seed phrase (never stored; callers should clear UI state immediately)
+/// * `peer_url` — allowlisted coinset peer; defaults to testnet11
+/// * `ttl_seconds` — JWT lifetime
+/// * returns a plain `{ did, jwt }` object — no secret keys exposed
+#[wasm_bindgen(js_name = loginWithSeed)]
+pub async fn login_with_seed(
+    mnemonic: &str,
+    peer_url: Option<String>,
+    ttl_seconds: u32,
+) -> Result<JsValue, JsError> {
+    modules::auth::service::login_with_seed_inner(mnemonic, peer_url.as_deref(), ttl_seconds)
+        .await
+        .map(login_session_to_js)
+        .map_err(|e| JsError::new(&e))
+}
+
+fn login_session_to_js((did, jwt): (String, String)) -> JsValue {
+    let obj = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("did"), &JsValue::from_str(&did));
+    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("jwt"), &JsValue::from_str(&jwt));
+    obj.into()
 }
 
 // Phase 2/3 hooks (next epics): deriveKeysFromPasskeyAssertion(assertion, credentialId),

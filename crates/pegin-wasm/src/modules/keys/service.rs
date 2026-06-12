@@ -1,9 +1,11 @@
 //! BIP39 mnemonic → Chia BLS key derivation (wallet and DID paths).
 
 use bip39::{Language, Mnemonic};
-use chia_bls::SecretKey;
+use chia_bls::{DerivableKey, SecretKey};
+use zeroize::Zeroize;
 
 use super::entities::WalletKeys;
+use super::helper::zeroize_secret_key;
 
 /// Chia wallet HD derivation path components (all hardened).
 /// m/12381/8444/2/0 → wallet key, m/12381/8444/3/0 → DID key
@@ -20,9 +22,11 @@ pub fn derive_wallet_keys_inner(mnemonic: &str) -> Result<WalletKeys, String> {
     let mn = Mnemonic::parse_in(Language::English, mnemonic)
         .map_err(|_| INVALID_MNEMONIC.to_string())?;
 
-    // Empty passphrase (Chia default); first 32 of the 64 seed bytes feed the master key.
-    let seed = mn.to_seed("");
-    let master_sk = SecretKey::from_seed(&seed[..32]);
+    // Empty passphrase (Chia default); the full 64-byte seed feeds the master key —
+    // truncating changes every derived key and breaks Sage/reference-wallet compatibility.
+    let mut seed = mn.to_seed("");
+    let mut master_sk = SecretKey::from_seed(&seed);
+    seed.zeroize();
 
     let wallet_sk = derive_path(
         &master_sk,
@@ -32,67 +36,105 @@ pub fn derive_wallet_keys_inner(mnemonic: &str) -> Result<WalletKeys, String> {
         &master_sk,
         &[PATH_PURPOSE, PATH_COIN_TYPE, PATH_DID, PATH_INDEX],
     );
+    let observer_intermediate_pk = master_sk
+        .public_key()
+        .derive_unhardened(PATH_PURPOSE)
+        .derive_unhardened(PATH_COIN_TYPE)
+        .derive_unhardened(PATH_WALLET);
+    zeroize_secret_key(&mut master_sk);
 
-    Ok(WalletKeys { wallet_sk, did_sk })
+    Ok(WalletKeys {
+        wallet_sk,
+        did_sk,
+        observer_intermediate_pk,
+    })
 }
 
 fn derive_path(master: &SecretKey, path: &[u32]) -> SecretKey {
-    path.iter()
-        .fold(master.clone(), |sk, &index| sk.derive_hardened(index))
+    let mut sk = master.clone();
+    for &index in path {
+        let next = sk.derive_hardened(index);
+        zeroize_secret_key(&mut sk);
+        sk = next;
+    }
+    sk
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_util::{
+        deterministic_test_phrase, DETERMINISTIC_DID_PK, DETERMINISTIC_WALLET_PK,
+    };
 
-    // Standard BIP39 test vector (12 words); paths m/12381/8444/{2,3}/0.
-    const TEST_MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon \
-         abandon abandon abandon abandon abandon about";
-    const KNOWN_WALLET_PK: &str =
-        "a0b24361941efdd2859c984c9a77e8898ee841ac0c6d8d3b5515d54f5fff59cc37a18808b1fa8df4afa6b447b84cbbbb";
-    const KNOWN_DID_PK: &str =
-        "aee8545e9cef0270cb54069a9ed81a6b1e657f68ee7e102853a0887df68f28455b79a14f86823a2b81eacc29af9d9b85";
+    #[test]
+    #[ignore = "debug helper: prints public-key vectors for deterministic_test_phrase()"]
+    fn debug_print_deterministic_vectors() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        println!("wallet_pk={}", keys.wallet_pk_hex());
+        println!("did_pk={}", keys.did_pk_hex());
+    }
 
     #[test]
     fn accepts_valid_24_word_mnemonic() {
-        use bip39::{Language, Mnemonic};
-
-        let phrase = Mnemonic::from_entropy_in(Language::English, &[0u8; 32])
-            .expect("valid 24-word phrase")
-            .to_string();
+        let phrase = deterministic_test_phrase();
         assert_eq!(phrase.split_whitespace().count(), 24);
 
         let keys = derive_wallet_keys_inner(&phrase).unwrap();
         assert_eq!(keys.did_pk_hex().len(), 96);
-        assert_ne!(keys.did_pk_hex(), KNOWN_DID_PK);
     }
 
     #[test]
     fn known_public_key_vector() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
-        assert_eq!(keys.wallet_pk_hex(), KNOWN_WALLET_PK);
-        assert_eq!(keys.did_pk_hex(), KNOWN_DID_PK);
+        let phrase = deterministic_test_phrase();
+        let keys = derive_wallet_keys_inner(&phrase).unwrap();
+        assert_eq!(keys.wallet_pk_hex(), DETERMINISTIC_WALLET_PK);
+        assert_eq!(keys.did_pk_hex(), DETERMINISTIC_DID_PK);
     }
 
     #[test]
     fn key_derivation_is_deterministic() {
-        let a = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
-        let b = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let phrase = deterministic_test_phrase();
+        let a = derive_wallet_keys_inner(&phrase).unwrap();
+        let b = derive_wallet_keys_inner(&phrase).unwrap();
         assert_eq!(a.wallet_pk_hex(), b.wallet_pk_hex());
         assert_eq!(a.did_pk_hex(), b.did_pk_hex());
     }
 
     #[test]
     fn wallet_and_did_keys_are_different() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         assert_ne!(keys.wallet_pk_hex(), keys.did_pk_hex());
     }
 
     #[test]
     fn public_keys_are_48_bytes_hex() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         assert_eq!(keys.wallet_pk_hex().len(), 96);
         assert_eq!(keys.did_pk_hex().len(), 96);
+    }
+
+    #[test]
+    fn observer_intermediate_pk_matches_address_root_from_seed() {
+        use bip39::{Language, Mnemonic};
+
+        let phrase = deterministic_test_phrase();
+        let keys = derive_wallet_keys_inner(&phrase).unwrap();
+
+        let mn = Mnemonic::parse_in(Language::English, &phrase).unwrap();
+        let seed = mn.to_seed("");
+        let master = SecretKey::from_seed(&seed);
+        let expected = master
+            .public_key()
+            .derive_unhardened(PATH_PURPOSE)
+            .derive_unhardened(PATH_COIN_TYPE)
+            .derive_unhardened(PATH_WALLET);
+
+        assert_eq!(
+            keys.observer_intermediate_pk.to_bytes(),
+            expected.to_bytes(),
+            "observer hints must come from the live master key, not a zeroed copy"
+        );
     }
 
     #[test]

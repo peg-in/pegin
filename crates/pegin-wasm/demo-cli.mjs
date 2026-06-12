@@ -3,7 +3,7 @@
  * Manual test CLI: mnemonic → BLS keys → on-chain DID lookup → self-signed JWT.
  * Runs the browser WASM in Node ≥ 20.12. Build first:
  *   wasm-pack build --target nodejs --out-dir pkg-node
- * Usage: node demo-cli.mjs [--peer-url url] [--aud url] [--ttl sec]
+ * Usage: node demo-cli.mjs [--peer-url url] [--ttl sec]
  *        node demo-cli.mjs --skip-chain
  * Prints only the JWT on stdout; diagnostics need LOG_LEVEL=info (wiki: logging-strategy).
  * Mnemonic: PEGIN_MNEMONIC env var > .env next to script > hidden prompt.
@@ -30,14 +30,13 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 /**
  * @param {string[]} argv - CLI args without the node/script prefix
- * @returns {{peerUrl: string|null, aud: string, ttl: number, skipChain?: boolean}}
+ * @returns {{peerUrl: string|null, ttl: number, skipChain?: boolean}}
  */
 function parseArgs(argv) {
-  const args = { aud: "https://app.example.com", ttl: 3600, peerUrl: null };
+  const args = { ttl: 3600, peerUrl: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === "--aud") args.aud = argv[++i];
-    else if (a === "--ttl") args.ttl = Number(argv[++i]);
+    if (a === "--ttl") args.ttl = Number(argv[++i]);
     else if (a === "--peer-url") args.peerUrl = argv[++i];
     else if (a === "--skip-chain") args.skipChain = true;
     else if (!a.startsWith("--")) {

@@ -88,6 +88,7 @@ futures-util          = { version = "0.3", default-features = false, features = 
 bip39                 = "2.0"
 base64                = "0.22"
 bech32                = "0.11"
+zeroize               = "1.8"
 
 # ── Workspace-internal crates ─────────────────────────────────────────────────
 pegin-domain         = { path = "crates/pegin-domain" }

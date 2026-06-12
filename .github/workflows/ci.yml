@@ -170,3 +170,7 @@ jobs:
 
       - name: Login SDK tests
         run: pnpm --filter @pegin/sdk test
+
+      # The typescript job skips demo-web (no wasm artifact there); build it for real here.
+      - name: Build demo web app
+        run: pnpm --filter @pegin/demo-web build

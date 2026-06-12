@@ -23,6 +23,7 @@
     "@simplewebauthn/browser": "^13.0.0"
   },
   "devDependencies": {
+    "@scure/bip39": "^1.6.0",
     "typescript": "^5.0.0",
     "vitest": "^2.0.0",
     "vite-plugin-wasm": "^3.3.0",
