@@ -13,7 +13,7 @@
     "test:smoke": "pnpm build:wasm:node && pnpm smoke",
     "test:wasm": "wasm-pack test --headless --chrome crates/pegin-wasm",
     "test:jwt": "pnpm build:wasm && pnpm --filter @pegin/sdk exec vitest run tests/jwt.test.ts",
-    "test:all": "cargo test --workspace -- --include-ignored && pnpm build:wasm:node && pnpm build:wasm && pnpm test:wasm && pnpm smoke && pnpm --filter @pegin/sdk test",
+    "test:all": "cargo test --workspace -- --include-ignored && pnpm build:wasm:node && pnpm build:wasm && pnpm test:wasm && pnpm smoke && pnpm --filter @pegin/sdk test && pnpm --filter @pegin/verify test",
     "dev": "pnpm -r dev",
     "typecheck": "pnpm -r typecheck",
     "lint": "cargo fmt --all -- --check && cargo clippy --workspace --all-targets -- -D warnings && pnpm -r lint && pnpm exec eslint \"crates/**/*.mjs\"",

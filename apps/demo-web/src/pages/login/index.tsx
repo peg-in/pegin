@@ -1,9 +1,14 @@
-// Login page — signed-in session view, or the seed phrase form gated on WASM readiness.
+// Login page — one primary action, terminal-minimal states.
 
 import { LoginForm } from './LoginForm.js'
 import { LoginResult } from './LoginResult.js'
 import { useLogin } from './useLogin.js'
 import { useWasm } from './useWasm.js'
+
+function truncateDid(did: string): string {
+  if (did.length <= 48) return did
+  return `${did.slice(0, 22)}…${did.slice(-18)}`
+}
 
 export function LoginPage() {
   const { state, login, logout } = useLogin()
@@ -11,34 +16,44 @@ export function LoginPage() {
 
   if (state.status === 'success') {
     return (
-      <section className="card">
-        <h2>Signed in</h2>
-        <p className="hint">Session persists across reloads until the JWT expires.</p>
-        <LoginResult state={state} />
-        <button type="button" className="btn btn-outline" onClick={logout}>
-          Logout
+      <>
+        <p className="tui-line">
+          <span className="tui-line-dim">did</span>
+          <span className="tui-line-value" title={state.session.did}>
+            {truncateDid(state.session.did)}
+          </span>
+        </p>
+        <button type="button" className="tui-primary tui-primary-outline" onClick={() => void logout()}>
+          ■ disconnect
         </button>
-      </section>
+      </>
+    )
+  }
+
+  if (state.status === 'restoring') {
+    return (
+      <p className="tui-msg" aria-live="polite">
+        <span className="tui-blink">▮</span> checking session
+      </p>
+    )
+  }
+
+  if (wasm.status === 'failed') {
+    return (
+      <p role="alert" className="tui-msg tui-msg-error">
+        wallet engine: {wasm.message}
+      </p>
     )
   }
 
   return (
-    <section className="card">
-      <h2>Login with PEGIN</h2>
-      {wasm.status === 'failed' ? (
-        <p role="alert" className="alert">
-          Wallet engine failed to load: {wasm.message}
-        </p>
-      ) : (
-        <>
-          <LoginForm
-            loading={state.status === 'loading'}
-            wasmReady={wasm.status === 'ready'}
-            onSubmit={(phrase) => void login(phrase)}
-          />
-          <LoginResult state={state} />
-        </>
-      )}
-    </section>
+    <>
+      <LoginForm
+        loading={state.status === 'loading'}
+        wasmReady={wasm.status === 'ready'}
+        onSubmit={(phrase) => void login(phrase)}
+      />
+      <LoginResult state={state} />
+    </>
   )
 }

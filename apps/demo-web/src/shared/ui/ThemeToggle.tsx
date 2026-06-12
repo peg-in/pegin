@@ -1,4 +1,4 @@
-// Light/dark toggle — overrides the system preference and persists the choice.
+// Light/dark toggle — terminal status-bar control.
 
 import { useState } from 'react'
 
@@ -27,7 +27,7 @@ export function ThemeToggle() {
       onClick={toggle}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
     >
-      {theme === 'dark' ? '☀️' : '🌙'}
+      [{theme === 'dark' ? 'lite' : 'dark'}]
     </button>
   )
 }
