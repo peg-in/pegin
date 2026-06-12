@@ -3,3 +3,8 @@
 # Cargo automatically adds --cap-lints=allow for external dependencies,
 # so this only affects workspace crates, not compiled deps.
 rustflags = ["-D", "warnings"]
+
+# wasm32 ignores [build] rustflags from ALL configs (incl. a user-level
+# `-fuse-ld=lld`, which rust-lld rejects) — target rustflags take precedence.
+[target.wasm32-unknown-unknown]
+rustflags = ["-D", "warnings"]

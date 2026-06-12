@@ -3,6 +3,13 @@
 
 mod modules;
 
+#[cfg(test)]
+#[path = "../test_vectors.rs"]
+mod test_vectors;
+
+#[cfg(test)]
+mod test_util;
+
 use wasm_bindgen::prelude::*;
 
 pub use modules::keys::WalletKeys;
@@ -71,22 +78,79 @@ pub async fn get_did(
         .map_err(|e| JsError::new(&e))
 }
 
-/// Mints a self-signed JWT with the DID key (`BLS12381_G2`). Infallible.
+/// Mints a self-signed ES256K JWT with the DID key, bound to `aud`.
 ///
 /// * `did` — fills the `iss` and `sub` claims
+/// * `aud` — relying-party origin or client id
 /// * `ttl_seconds` — lifetime from now; sets the `exp` claim
+/// * `nonce` — optional server nonce embedded in the JWT for replay resistance
 #[wasm_bindgen(js_name = mintJwt)]
-pub fn mint_jwt(keys: &WalletKeys, did: &str, ttl_seconds: u32) -> String {
-    modules::jwt::service::mint_jwt_inner(keys, did, ttl_seconds)
+// wasm-bindgen marshals JS `string | null` as an owned `Option<String>`, not `Option<&str>`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn mint_jwt(
+    keys: &WalletKeys,
+    did: &str,
+    aud: &str,
+    ttl_seconds: u32,
+    nonce: Option<String>,
+) -> Result<String, JsError> {
+    modules::jwt::service::mint_jwt_inner(keys, did, aud, ttl_seconds, nonce.as_deref())
+        .map_err(|e| JsError::new(&e))
 }
 
-/// Verifies a JWT minted by `mintJwt`.
+/// Verifies a JWT minted by [`mint_jwt`].
 ///
-/// * `did_public_key` — 48-byte DID public key (`WalletKeys.didPublicKey`)
+/// * `expected_aud` — must match the token `aud` claim
+/// * `expected_nonce` — when set, must match the token `nonce` claim
 /// * returns `false` for expired, tampered, or bad-signature tokens
 #[wasm_bindgen(js_name = verifyJwt)]
-pub fn verify_jwt(token: &str, did_public_key: &[u8]) -> bool {
-    modules::jwt::service::verify_jwt_inner(token, did_public_key).unwrap_or(false)
+// wasm-bindgen marshals JS `string | null` as an owned `Option<String>`, not `Option<&str>`.
+#[allow(clippy::needless_pass_by_value)]
+pub fn verify_jwt(token: &str, expected_aud: &str, expected_nonce: Option<String>) -> bool {
+    modules::jwt::service::verify_jwt_inner(token, expected_aud, expected_nonce.as_deref())
+        .unwrap_or(false)
+}
+
+/// Derives keys, resolves the on-chain DID, and mints a JWT entirely inside WASM.
+///
+/// * `mnemonic` — BIP39 seed phrase (never stored; callers should clear UI state immediately)
+/// * `peer_url` — allowlisted coinset peer; defaults to testnet11
+/// * `ttl_seconds` — JWT lifetime
+/// * `aud` — relying-party origin bound into the JWT
+/// * `challenge_nonce` — when set, signs the nonce with the DID key and embeds it in the JWT
+/// * returns `{ did, jwt, challengeSig? }` — no secret keys exposed
+#[wasm_bindgen(js_name = loginWithSeed)]
+pub async fn login_with_seed(
+    mnemonic: &str,
+    peer_url: Option<String>,
+    ttl_seconds: u32,
+    aud: &str,
+    challenge_nonce: Option<String>,
+) -> Result<JsValue, JsError> {
+    modules::auth::service::login_with_seed_inner(
+        mnemonic,
+        peer_url.as_deref(),
+        ttl_seconds,
+        aud,
+        challenge_nonce.as_deref(),
+    )
+    .await
+    .map(login_session_to_js)
+    .map_err(|e| JsError::new(&e))
+}
+
+fn login_session_to_js((did, jwt, challenge_sig): (String, String, Option<String>)) -> JsValue {
+    let obj = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("did"), &JsValue::from_str(&did));
+    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("jwt"), &JsValue::from_str(&jwt));
+    if let Some(sig) = challenge_sig {
+        let _ = js_sys::Reflect::set(
+            &obj,
+            &JsValue::from_str("challengeSig"),
+            &JsValue::from_str(&sig),
+        );
+    }
+    obj.into()
 }
 
 // Phase 2/3 hooks (next epics): deriveKeysFromPasskeyAssertion(assertion, credentialId),

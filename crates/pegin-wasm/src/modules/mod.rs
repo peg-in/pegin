@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod did;
 pub mod jwt;
 pub mod keys;

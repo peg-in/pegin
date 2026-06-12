@@ -6,6 +6,8 @@ members = [
     "crates/pegin-wallet",
     "crates/pegin-infrastructure",
     "crates/pegin-testing",
+    "crates/pegin-jwt",
+    "crates/pegin-verify",
     "crates/pegin-wasm",
 ]
 
@@ -59,6 +61,8 @@ jsonwebtoken   = "9.3"
 sha2              = "0.10"
 chacha20poly1305  = "0.10"
 rand              = "0.8"
+hkdf              = "0.12"
+k256              = { version = "0.13", features = ["ecdsa"] }
 
 # ── Async runtime ─────────────────────────────────────────────────────────────
 tokio = { version = "1.40", features = ["full"] }
@@ -88,9 +92,12 @@ futures-util          = { version = "0.3", default-features = false, features = 
 bip39                 = "2.0"
 base64                = "0.22"
 bech32                = "0.11"
+zeroize               = "1.8"
 
 # ── Workspace-internal crates ─────────────────────────────────────────────────
 pegin-domain         = { path = "crates/pegin-domain" }
+pegin-jwt            = { path = "crates/pegin-jwt" }
+pegin-verify         = { path = "crates/pegin-verify" }
 pegin-identity       = { path = "crates/pegin-identity" }
 pegin-wallet         = { path = "crates/pegin-wallet" }
 pegin-infrastructure = { path = "crates/pegin-infrastructure" }

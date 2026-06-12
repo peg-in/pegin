@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Smoke test for the pegin-wasm Node build. Never prints the mnemonic.
- *   Part 1 — public throwaway mnemonic, offline, always runs.
+ *   Part 1 — deterministic zero-entropy phrase, offline, always runs.
  *   Part 2 — real on-chain flow with a personal testnet wallet; runs when
  *            PEGIN_MNEMONIC and PEGIN_DID are set (env vars > .env), else skips.
  * Build first: wasm-pack build --target nodejs --out-dir pkg-node
@@ -12,6 +12,11 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  alternateTestPhrase,
+  deterministicTestPhrase,
+  DETERMINISTIC_DID_PK,
+} from "./test-support/deterministic-phrase.mjs";
+import {
   deriveWalletKeys,
   getDid,
   mintJwt,
@@ -19,18 +24,14 @@ import {
   verifyJwt,
 } from "./pkg-node/pegin_wasm.js";
 
+const TEST_AUD = "https://smoke.example";
+
 const envFile = join(dirname(fileURLToPath(import.meta.url)), ".env");
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 // Reporter output is the program's product — stdout/stderr, not logging.
 const out = (line) => process.stdout.write(`${line}\n`);
 const err = (line) => process.stderr.write(`${line}\n`);
-
-// Public BIP39 test vector and the DID public key it must always derive.
-const THROWAWAY_MNEMONIC =
-  "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-const THROWAWAY_DID_PK =
-  "aee8545e9cef0270cb54069a9ed81a6b1e657f68ee7e102853a0887df68f28455b79a14f86823a2b81eacc29af9d9b85";
 
 let failures = 0;
 /**
@@ -48,12 +49,12 @@ async function test(name, fn) {
   }
 }
 
-out("Part 1 — throwaway mnemonic (offline, deterministic)");
+out("Part 1 — deterministic test phrase (offline, zero-entropy)");
 
-const keys = deriveWalletKeys(THROWAWAY_MNEMONIC);
+const keys = deriveWalletKeys(deterministicTestPhrase());
 
 await test("derives the known DID public key", () => {
-  assert.equal(keys.didPkHex, THROWAWAY_DID_PK);
+  assert.equal(keys.didPkHex, DETERMINISTIC_DID_PK);
 });
 
 await test("challenge signature is 96 bytes and deterministic", () => {
@@ -63,23 +64,26 @@ await test("challenge signature is 96 bytes and deterministic", () => {
 });
 
 const fakeDid = "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
-const token = mintJwt(keys, fakeDid, 600);
+const token = mintJwt(keys, fakeDid, TEST_AUD, 600);
 
-await test("minted JWT verifies against its own DID key", () => {
-  assert.equal(verifyJwt(token, keys.didPublicKey), true);
+await test("minted ES256K JWT verifies for the bound audience", () => {
+  assert.equal(verifyJwt(token, TEST_AUD, undefined), true);
 });
 
 await test("tampered JWT payload fails verification", () => {
   const [header, , sig] = token.split(".");
   const evil = Buffer.from('{"iss":"attacker","exp":9999999999}').toString("base64url");
-  assert.equal(verifyJwt(`${header}.${evil}.${sig}`, keys.didPublicKey), false);
+  assert.equal(verifyJwt(`${header}.${evil}.${sig}`, TEST_AUD, undefined), false);
 });
 
-await test("JWT fails verification with a different key", () => {
-  const other = deriveWalletKeys(
-    "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"
-  );
-  assert.equal(verifyJwt(token, other.didPublicKey), false);
+await test("JWT fails verification for a different audience", () => {
+  assert.equal(verifyJwt(token, "https://other.example", undefined), false);
+});
+
+await test("JWT with embedded nonce verifies when nonce matches", () => {
+  const nonce = "smoke-nonce-1";
+  const withNonce = mintJwt(keys, fakeDid, TEST_AUD, 600, nonce);
+  assert.equal(verifyJwt(withNonce, TEST_AUD, nonce), true);
 });
 
 out("\nPart 2 — personal testnet wallet (on-chain via coinset.org)");
@@ -103,8 +107,8 @@ if (!PEGIN_MNEMONIC || !PEGIN_DID) {
     });
 
     await test("personal JWT mints and verifies", () => {
-      const myToken = mintJwt(myKeys, myDid, 600);
-      assert.equal(verifyJwt(myToken, myKeys.didPublicKey), true);
+      const myToken = mintJwt(myKeys, myDid, TEST_AUD, 600);
+      assert.equal(verifyJwt(myToken, TEST_AUD, undefined), true);
     });
   }
 }

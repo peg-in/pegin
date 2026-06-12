@@ -14,6 +14,7 @@ concurrency:
 
 env:
   RUST_CACHE_KEY: pegin-rust-v1
+  PEGIN_JWT_HKDF_SALT: ${{ vars.PEGIN_JWT_HKDF_SALT }}
 
 jobs:
   rust-build:
@@ -111,11 +112,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm -r lint && pnpm exec eslint "crates/**/*.mjs"
-
+      # Build before lint: demo-web's typed lint resolves @pegin/sdk from its built dist.
       - name: Build
         run: pnpm -r build
+
+      - name: Lint
+        run: pnpm -r lint && pnpm exec eslint "crates/**/*.mjs"
 
       - name: Test
         run: pnpm -r test
@@ -170,3 +172,7 @@ jobs:
 
       - name: Login SDK tests
         run: pnpm --filter @pegin/sdk test
+
+      # The typescript job skips demo-web (no wasm artifact there); build it for real here.
+      - name: Build demo web app
+        run: pnpm --filter @pegin/demo-web build
