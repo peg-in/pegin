@@ -3,7 +3,8 @@
 mod common;
 
 use common::{
-    alternate_test_phrase, deterministic_test_phrase, mnemonic_from_env, DETERMINISTIC_DID_PK,
+    alternate_test_phrase, deterministic_test_phrase, fresh_wallet_phrase, mnemonic_from_env,
+    DETERMINISTIC_DID_PK, DETERMINISTIC_WALLET_PK,
 };
 use wasm_bindgen_test::*;
 wasm_bindgen_test_configure!(run_in_browser);
@@ -34,6 +35,12 @@ fn derives_wallet_keys_in_browser() {
 fn known_did_pk_vector_matches_in_browser() {
     let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
     assert_eq!(keys.did_pk_hex(), DETERMINISTIC_DID_PK);
+}
+
+#[wasm_bindgen_test]
+fn known_wallet_pk_vector_matches_in_browser() {
+    let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
+    assert_eq!(keys.wallet_pk_hex(), DETERMINISTIC_WALLET_PK);
 }
 
 #[wasm_bindgen_test]
@@ -122,11 +129,11 @@ fn wrong_public_key_fails_verification_in_browser() {
 
 #[wasm_bindgen_test]
 async fn get_did_returns_null_for_fresh_keys_in_browser() {
-    let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
+    let keys = derive_wallet_keys(&fresh_wallet_phrase()).expect("valid mnemonic");
     let did = get_did(&keys, None).await.expect("lookup must not error");
     assert!(
         did.is_none(),
-        "deterministic test phrase must have no on-chain DID"
+        "fresh_wallet_phrase must have no on-chain DID on testnet11"
     );
 }
 

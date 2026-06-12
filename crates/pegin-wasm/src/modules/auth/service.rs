@@ -34,7 +34,7 @@ pub async fn login_with_seed_inner(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
     use super::*;
 

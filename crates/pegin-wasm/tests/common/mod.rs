@@ -6,6 +6,8 @@ include!("../../test_vectors.rs");
 
 const FIXED_TEST_ENTROPY: [u8; 32] = [0u8; 32];
 const ALT_TEST_ENTROPY: [u8; 32] = [0xff; 32];
+/// Entropy unlikely to own a DID on public testnets (live coinset negative control).
+const FRESH_WALLET_ENTROPY: [u8; 32] = [0x42; 32];
 
 pub fn deterministic_test_phrase() -> String {
     phrase_from_entropy(&FIXED_TEST_ENTROPY)
@@ -13,6 +15,11 @@ pub fn deterministic_test_phrase() -> String {
 
 pub fn alternate_test_phrase() -> String {
     phrase_from_entropy(&ALT_TEST_ENTROPY)
+}
+
+/// Phrase for live-network tests that expect no on-chain DID.
+pub fn fresh_wallet_phrase() -> String {
+    phrase_from_entropy(&FRESH_WALLET_ENTROPY)
 }
 
 fn phrase_from_entropy(entropy: &[u8; 32]) -> String {

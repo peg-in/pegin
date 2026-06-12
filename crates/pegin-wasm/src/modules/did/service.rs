@@ -211,6 +211,7 @@ mod tests {
     struct MockClient {
         hints: HashMap<String, Vec<CoinRecordJson>>,
         coins: HashMap<String, CoinRecordJson>,
+        hint_queries: std::cell::Cell<usize>,
     }
 
     impl MockClient {
@@ -218,7 +219,12 @@ mod tests {
             Self {
                 hints: HashMap::new(),
                 coins: HashMap::new(),
+                hint_queries: std::cell::Cell::new(0),
             }
+        }
+
+        fn hint_query_count(&self) -> usize {
+            self.hint_queries.get()
         }
 
         fn with_hint(mut self, hint_hex: &str, records: Vec<CoinRecordJson>) -> Self {
@@ -240,6 +246,8 @@ mod tests {
         ) -> Result<String, String> {
             match endpoint {
                 "get_coin_records_by_hints" => {
+                    self.hint_queries
+                        .set(self.hint_queries.get().saturating_add(1));
                     let hints = body["hints"]
                         .as_array()
                         .ok_or_else(|| "mock: missing hints".to_owned())?;
@@ -281,6 +289,23 @@ mod tests {
             spent,
             confirmed_block_index: height,
         }
+    }
+
+    #[test]
+    fn candidate_hints_equals_quick_scan_plus_remaining() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        let mut merged = quick_scan_hints(&keys);
+        merged.append(&mut remaining_hints(&keys));
+        assert_eq!(merged, candidate_hints(&keys));
+    }
+
+    #[test]
+    fn quick_scan_covers_did_hash_and_low_observer_indices() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        let quick = quick_scan_hints(&keys);
+        assert_eq!(quick.len(), 1 + (HINT_QUICK_SCAN_OBSERVER_MAX as usize + 1));
+        assert_eq!(quick[0], hint_hex(did_puzzle_hash_from_wallet(&keys)));
+        assert_eq!(quick[1], candidate_hints(&keys)[1]);
     }
 
     #[test]
@@ -332,6 +357,11 @@ mod tests {
             result.as_deref(),
             Some(encode_did(LAUNCHER_HEX).unwrap().as_str())
         );
+        assert_eq!(
+            client.hint_query_count(),
+            1,
+            "low observer index must resolve in the first hint scan phase"
+        );
     }
 
     #[tokio::test]
@@ -362,6 +392,11 @@ mod tests {
         assert_eq!(
             result.as_deref(),
             Some(encode_did(LAUNCHER_HEX).unwrap().as_str())
+        );
+        assert_eq!(
+            client.hint_query_count(),
+            2,
+            "late observer index requires the second hint scan phase"
         );
     }
 
