@@ -4,7 +4,8 @@
   "private": true,
   "description": "PEGIN desktop app — Tauri v2 shell (empty skeleton)",
   "scripts": {
-    "dev": "tauri dev",
+    "dev": "echo 'mini: Tauri skeleton — not runnable yet; src-tauri/ scaffold lands in feat-5'",
+    "dev:tauri": "tauri dev",
     "build": "echo 'mini: Tauri skeleton — src-tauri/ scaffold added in feat-5'",
     "tauri": "tauri",
     "lint": "eslint src",

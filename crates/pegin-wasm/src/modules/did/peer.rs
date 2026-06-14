@@ -44,15 +44,17 @@ pub trait CoinsetClient {
         body: serde_json::Value,
     ) -> impl Future<Output = Result<String, String>>;
 
-    async fn get_coin_records_by_hint(
+    /// One batched query for every candidate hint — keeps the lookup to a
+    /// single round trip (bursts of per-hint requests trip Cloudflare).
+    async fn get_coin_records_by_hints(
         &self,
-        hint_hex: &str,
+        hints_hex: &[String],
     ) -> Result<Vec<CoinRecordJson>, String> {
         let body = serde_json::json!({
-            "hint": hint_hex,
-            "include_spent_coins": true,
+            "hints": hints_hex,
+            "include_spent_coins": false,
         });
-        let text = self.post_json("get_coin_records_by_hint", body).await?;
+        let text = self.post_json("get_coin_records_by_hints", body).await?;
         let data: CoinRecordsResponse =
             serde_json::from_str(&text).map_err(|e| format!("parse error: {e}"))?;
         if !data.success {
@@ -86,8 +88,11 @@ pub struct CoinsetRestClient {
 
 #[cfg(target_arch = "wasm32")]
 impl CoinsetRestClient {
-    pub fn new(base_url: String) -> Self {
-        Self { base_url }
+    pub fn new(base_url: String) -> Result<Self, String> {
+        if !base_url.starts_with("https://") {
+            return Err("coinset client requires HTTPS".to_owned());
+        }
+        Ok(Self { base_url })
     }
 }
 
@@ -103,6 +108,9 @@ impl CoinsetClient for CoinsetRestClient {
             .send()
             .await
             .map_err(|e| format!("network error: {e}"))?;
+        if !resp.ok() {
+            return Err(format!("coinset returned HTTP {}", resp.status()));
+        }
         resp.text().await.map_err(|e| format!("network error: {e}"))
     }
 }

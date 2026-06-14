@@ -1,0 +1,38 @@
+[package]
+name    = "pegin-verify"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+workspace = true
+
+[dependencies]
+pegin-jwt  = { workspace = true }
+chia-bls   = { workspace = true }
+bech32     = { workspace = true }
+hex        = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+reqwest    = { workspace = true }
+thiserror  = { workspace = true }
+
+chia-wallet-sdk = { workspace = true }
+tokio      = { workspace = true }
+axum       = { workspace = true }
+getrandom  = { workspace = true }
+
+# Pinned to the 0.20 chia-puzzle-types line that chia-wallet-sdk 0.23 bundles so
+# Coin/PublicKey/TreeHash types agree across `Did::parse_child`. This deliberately
+# differs from the workspace's 0.25 pin, so it stays crate-local.
+chia-puzzle-types = "0.20"
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[[bin]]
+name = "pegin-auth-server"
+path = "src/bin/pegin-auth-server.rs"
+
+[[bin]]
+name = "did-owner"
+path = "src/bin/did-owner.rs"

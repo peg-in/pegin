@@ -10,6 +10,26 @@ const DID_HRP: &str = "did:chia:";
 const SINGLETON_LAUNCHER_PUZZLE_HASH: &str =
     "eff07522495060c066f66f32acc2a77e3a3e737aca8baea4d1a64ea4cdc13da9";
 
+/// Coinset REST bases this wallet is allowed to call (HTTPS only).
+const ALLOWED_REST_BASES: &[&str] = &[
+    "https://testnet11.api.coinset.org",
+    "https://testnet.api.coinset.org",
+    "https://api.coinset.org",
+];
+
+/// Default coinset WebSocket peer (feat-12); REST base is derived automatically.
+pub const DEFAULT_PEER_WS: &str = "wss://testnet11.coinset.org:58444";
+
+/// Default coinset REST API for testnet11.
+pub const DEFAULT_REST_BASE: &str = "https://testnet11.api.coinset.org";
+
+/// WebSocket peer hostnames mapped to their REST API base.
+const WS_HOST_TO_REST: &[(&str, &str)] = &[
+    ("testnet11.coinset.org", DEFAULT_REST_BASE),
+    ("testnet.coinset.org", "https://testnet.api.coinset.org"),
+    ("api.coinset.org", "https://api.coinset.org"),
+    ("coinset.org", "https://api.coinset.org"),
+];
 /// Returns `true` when `puzzle_hash` is the singleton launcher puzzle hash.
 /// Tolerates a `0x` prefix and any hex case — neither is contractual in coinset responses.
 // Used only by the WASM on-chain check; kept cfg-free so `cargo test` covers it.
@@ -20,32 +40,42 @@ pub fn is_singleton_launcher(puzzle_hash: &str) -> bool {
         .eq_ignore_ascii_case(SINGLETON_LAUNCHER_PUZZLE_HASH)
 }
 
-/// Default coinset WebSocket peer (feat-12); REST base is derived automatically.
-pub const DEFAULT_PEER_WS: &str = "wss://testnet11.coinset.org:58444";
-
-/// Default coinset REST API for testnet11.
-pub const DEFAULT_REST_BASE: &str = "https://testnet11.api.coinset.org";
-
-/// Maps a peer URL (WebSocket or HTTPS) to the coinset REST base URL.
-pub fn rest_base_url(peer_url: Option<&str>) -> String {
+/// Maps a peer URL (WebSocket or HTTPS) to an allowlisted coinset REST base URL.
+pub fn rest_base_url(peer_url: Option<&str>) -> Result<String, String> {
     match peer_url {
-        None => DEFAULT_REST_BASE.to_owned(),
-        Some(url) if url.starts_with("https://") => url.trim_end_matches('/').to_owned(),
-        Some(url) => {
-            let host = url
-                .trim_start_matches("wss://")
-                .trim_start_matches("ws://")
-                .split(':')
-                .next()
-                .unwrap_or(url);
-            match host {
-                "testnet11.coinset.org" => DEFAULT_REST_BASE.to_owned(),
-                "testnet.coinset.org" => "https://testnet.api.coinset.org".to_owned(),
-                "api.coinset.org" | "coinset.org" => "https://api.coinset.org".to_owned(),
-                other => format!("https://{other}"),
-            }
-        }
+        None => Ok(DEFAULT_REST_BASE.to_owned()),
+        Some(url) if url.starts_with("https://") => parse_allowed_https(url),
+        Some(url) if url.starts_with("wss://") => map_ws_peer(url),
+        Some(url) if url.starts_with("ws://") => Err("peer URL must use wss://".to_owned()),
+        Some(_) => Err("peer URL must use wss:// or https://".to_owned()),
     }
+}
+
+fn parse_allowed_https(url: &str) -> Result<String, String> {
+    let trimmed = url.trim_end_matches('/');
+    let host = trimmed
+        .strip_prefix("https://")
+        .and_then(|rest| rest.split('/').next())
+        .ok_or_else(|| "invalid peer URL".to_owned())?;
+    let base = format!("https://{host}");
+    if ALLOWED_REST_BASES.contains(&base.as_str()) {
+        Ok(base)
+    } else {
+        Err(format!("unsupported coinset peer: {host}"))
+    }
+}
+
+fn map_ws_peer(url: &str) -> Result<String, String> {
+    let host = url
+        .trim_start_matches("wss://")
+        .split(':')
+        .next()
+        .ok_or_else(|| "invalid peer URL".to_owned())?;
+    WS_HOST_TO_REST
+        .iter()
+        .find(|(h, _)| *h == host)
+        .map(|(_, rest)| (*rest).to_owned())
+        .ok_or_else(|| format!("unsupported coinset peer: {host}"))
 }
 
 /// Parses a DID identifier into the 32-byte launcher ID as lowercase hex.
@@ -93,16 +123,27 @@ mod tests {
 
     #[test]
     fn rest_base_url_defaults_to_testnet11() {
-        assert_eq!(rest_base_url(None), DEFAULT_REST_BASE);
+        assert_eq!(rest_base_url(None).unwrap(), DEFAULT_REST_BASE);
     }
 
     #[test]
     fn rest_base_url_maps_ws_peer_to_https_api() {
-        assert_eq!(rest_base_url(Some(DEFAULT_PEER_WS)), DEFAULT_REST_BASE);
         assert_eq!(
-            rest_base_url(Some("https://testnet11.api.coinset.org")),
+            rest_base_url(Some(DEFAULT_PEER_WS)).unwrap(),
+            DEFAULT_REST_BASE
+        );
+        assert_eq!(
+            rest_base_url(Some("https://testnet11.api.coinset.org")).unwrap(),
             "https://testnet11.api.coinset.org"
         );
+    }
+
+    #[test]
+    fn rest_base_url_rejects_unknown_and_insecure_peers() {
+        assert!(rest_base_url(Some("https://evil.example")).is_err());
+        assert!(rest_base_url(Some("wss://evil.example:58444")).is_err());
+        assert!(rest_base_url(Some("ws://testnet11.coinset.org:58444")).is_err());
+        assert!(rest_base_url(Some("http://testnet11.api.coinset.org")).is_err());
     }
 
     #[test]

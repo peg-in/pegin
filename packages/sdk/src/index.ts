@@ -1,4 +1,6 @@
-// @pegin/sdk public surface — import only from here, never from internal paths.
+/**
+ * @pegin/sdk public surface — import only from here, never from internal paths.
+ */
 
 // entities
 export type { PeginSession } from './entities/session/index.js'
@@ -7,8 +9,21 @@ export type { ChiaDid } from './entities/did/index.js'
 export { isChiaDid, launcherIdFromDid, didFromLauncherId } from './entities/did/index.js'
 
 // features
-export { PeginButton } from './features/login/index.js'
-export type { PeginButtonOptions, LoginOptions } from './features/login/index.js'
+export {
+  PeginButton,
+  loginWithPegin,
+  loadPeginSession,
+  logoutPegin,
+  PeginAuthClient,
+} from './features/login/index.js'
+export type {
+  PeginButtonOptions,
+  LoginOptions,
+  LoginWithPeginOptions,
+  PeginWasmLogin,
+  PeginNoncePayload,
+  PeginServerSession,
+} from './features/login/index.js'
 export { beginAuthentication, finishAuthentication } from './features/login/index.js'
 export { beginRegistration, finishRegistration } from './features/register/index.js'
 export type { RegisterOptions } from './features/register/index.js'

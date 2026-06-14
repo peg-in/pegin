@@ -2,6 +2,7 @@
   "name": "@pegin/sdk",
   "version": "0.1.0",
   "private": false,
+  "type": "module",
   "description": "Login with PEGIN — browser SDK for relying parties",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -23,6 +24,7 @@
     "@simplewebauthn/browser": "^13.0.0"
   },
   "devDependencies": {
+    "@scure/bip39": "^1.6.0",
     "typescript": "^5.0.0",
     "vitest": "^2.0.0",
     "vite-plugin-wasm": "^3.3.0",

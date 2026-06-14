@@ -10,6 +10,7 @@ workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+pegin-jwt            = { workspace = true }
 chia-bls             = { workspace = true }
 chia-protocol        = { workspace = true }
 chia-puzzles         = { workspace = true }
@@ -24,11 +25,14 @@ serde_json           = { workspace = true }
 hex                  = { workspace = true }
 base64               = { workspace = true }
 bech32               = { workspace = true }
+zeroize              = { workspace = true }
 
 # tokio is deliberately absent from [dependencies]: it (via mio) does not compile on
 # wasm32-unknown-unknown, and `wasm-pack test` builds dev-dependencies too.
 [dev-dependencies]
 wasm-bindgen-test = { workspace = true }
+dotenvy               = { workspace = true }
+bip39                 = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros"] }

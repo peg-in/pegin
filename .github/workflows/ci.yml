@@ -1,7 +1,7 @@
 name: CI
 
-# Rust: build once → fmt / clippy / test / wasm reuse the same cached target/ dir.
-# TypeScript: fully independent track with pnpm cache.
+# Rust: build once → fmt / clippy / test reuse the same cached target/ dir.
+# TypeScript + WASM: one job builds wasm, then runs the JS build/lint/tests + browser tests.
 # No Docker — Swatinem/rust-cache shares compiled deps across jobs via a shared key.
 
 on:
@@ -15,10 +15,16 @@ concurrency:
 env:
   RUST_CACHE_KEY: pegin-rust-v1
 
+# PEGIN_JWT_HKDF_SALT (build.rs salt embed) is scoped to the jobs/steps that compile
+# pegin-jwt — never at workflow level, so rust-fmt, pnpm install, lint, and smoke
+# steps never see the secret.
+
 jobs:
   rust-build:
     name: Rust build
     runs-on: ubuntu-latest
+    env:
+      PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,6 +63,8 @@ jobs:
     name: Rust clippy
     needs: rust-build
     runs-on: ubuntu-latest
+    env:
+      PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,6 +86,8 @@ jobs:
     name: Rust test
     needs: rust-build
     runs-on: ubuntu-latest
+    env:
+      PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -93,35 +103,11 @@ jobs:
       - name: Test
         run: cargo test --workspace
 
+  # TypeScript + WASM share one job: the web build/lint/tests need the wasm
+  # artifacts, so building wasm first lets `pnpm -r build` compile sdk → demo-web
+  # in dependency order (and the same install serves both).
   typescript:
-    name: TypeScript
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm -r lint && pnpm exec eslint "crates/**/*.mjs"
-
-      - name: Build
-        run: pnpm -r build
-
-      - name: Test
-        run: pnpm -r test
-
-  wasm:
-    name: Browser wallet (WASM)
+    name: TypeScript + WASM
     needs: rust-build
     runs-on: ubuntu-latest
     steps:
@@ -156,17 +142,22 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Release wasm builds; test deps were warmed in rust-build.
+      # Salt scoped to the two steps that compile pegin-jwt (via build.rs).
       - name: Build wasm packages (node + bundler)
         run: pnpm build:wasm:node && pnpm build:wasm
+        env:
+          PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
+
+      - name: Build, lint, and test (TS)
+        run: pnpm -r build && pnpm -r lint && pnpm exec eslint "crates/**/*.mjs" && pnpm -r test
 
       - name: Browser wallet tests (headless Chrome)
         run: wasm-pack test --headless --chrome crates/pegin-wasm
+        env:
+          PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
 
       - name: On-chain smoke test (Node)
         run: pnpm smoke
         env:
           PEGIN_MNEMONIC: ${{ secrets.PEGIN_MNEMONIC }}
           PEGIN_DID: ${{ vars.PEGIN_DID }}
-
-      - name: Login SDK tests
-        run: pnpm --filter @pegin/sdk test

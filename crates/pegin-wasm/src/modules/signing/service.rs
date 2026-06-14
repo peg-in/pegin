@@ -1,16 +1,21 @@
 //! BLS signing — DID challenge proofs and spend bundle signatures.
 
-use chia_bls::{aggregate, sign, Signature};
+use chia_bls::{aggregate, sign, SecretKey, Signature};
 use chia_protocol::SpendBundle;
 use chia_traits::streamable::Streamable;
 
 use crate::modules::keys::WalletKeys;
 
-/// Signs a UTF-8 challenge string with the DID key using BLS `AugSchemeMPL`.
-/// Returns the 96-byte signature as lowercase hex.
-pub fn sign_challenge_inner(keys: &WalletKeys, challenge: &str) -> String {
-    let sig: Signature = sign(&keys.did_sk, challenge.as_bytes());
+/// Signs a UTF-8 challenge with an explicit key using BLS `AugSchemeMPL` (96-byte hex).
+/// Login passes the DID owner key so the proof binds to the on-chain owner.
+pub fn sign_challenge_with_sk(sk: &SecretKey, challenge: &str) -> String {
+    let sig: Signature = sign(sk, challenge.as_bytes());
     hex::encode(sig.to_bytes())
+}
+
+/// Signs a UTF-8 challenge string with the DID key (standalone helper).
+pub fn sign_challenge_inner(keys: &WalletKeys, challenge: &str) -> String {
+    sign_challenge_with_sk(&keys.did_sk, challenge)
 }
 
 /// Signs a `SpendBundle` (Chia streamable bytes) with the wallet key.
@@ -45,12 +50,11 @@ mod tests {
     use super::*;
     use crate::modules::keys::service::derive_wallet_keys_inner;
 
-    const TEST_MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon \
-         abandon abandon abandon abandon abandon about";
+    use crate::test_util::deterministic_test_phrase;
 
     #[test]
     fn sign_challenge_produces_valid_bls_signature() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         let challenge = "test-server-nonce-abc123";
 
         let sig_hex = sign_challenge_inner(&keys, challenge);
@@ -67,7 +71,7 @@ mod tests {
 
     #[test]
     fn sign_challenge_is_deterministic() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         let a = sign_challenge_inner(&keys, "challenge");
         let b = sign_challenge_inner(&keys, "challenge");
         assert_eq!(a, b);
@@ -75,7 +79,7 @@ mod tests {
 
     #[test]
     fn sign_challenge_differs_for_different_inputs() {
-        let keys = derive_wallet_keys_inner(TEST_MNEMONIC).unwrap();
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
         let a = sign_challenge_inner(&keys, "challenge-a");
         let b = sign_challenge_inner(&keys, "challenge-b");
         assert_ne!(a, b);
