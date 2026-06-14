@@ -152,8 +152,10 @@ async fn handle_session(
     let verified = match verified {
         Ok(v) => v,
         // A rejected login is the client's fault (forged/non-owner token) → 401, never 500.
+        // Coinset detail stays server-side; the client gets a generic upstream error.
         Err(VerifyError::Coinset(msg)) => {
-            return error(StatusCode::BAD_GATEWAY, &format!("coinset: {msg}"))
+            eprintln!("coinset verification error: {msg}");
+            return error(StatusCode::BAD_GATEWAY, "upstream verification unavailable");
         }
         Err(_) => return error(StatusCode::UNAUTHORIZED, "login verification failed"),
     };

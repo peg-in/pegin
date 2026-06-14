@@ -40,7 +40,10 @@ function parseArgs(argv) {
     else if (a === "--peer-url") args.peerUrl = argv[++i];
     else if (a === "--aud") args.aud = argv[++i];
     else if (a === "--skip-chain") args.skipChain = true;
-    else if (!a.startsWith("--")) {
+    else if (a.startsWith("--")) {
+      logger.error(`unknown flag '${a}'`);
+      process.exit(1);
+    } else {
       logger.error(`unexpected positional argument '${a}' — DID is resolved from keys, not CLI input`);
       process.exit(1);
     }

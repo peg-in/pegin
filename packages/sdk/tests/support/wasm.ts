@@ -13,7 +13,8 @@ import {
 const WASM_ENTRY = new URL('../../wasm/pegin_wasm.js', import.meta.url)
 const WASM_BINARY = new URL('../../wasm/pegin_wasm_bg.wasm', import.meta.url)
 
-export const wasmBuilt = existsSync(fileURLToPath(WASM_ENTRY))
+export const wasmBuilt =
+  existsSync(fileURLToPath(WASM_ENTRY)) && existsSync(fileURLToPath(WASM_BINARY))
 
 async function loadWasm() {
   const mod = await import(WASM_ENTRY.href)

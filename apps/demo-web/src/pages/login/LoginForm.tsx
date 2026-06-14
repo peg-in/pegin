@@ -33,16 +33,6 @@ export function LoginForm({ loading, wasmReady, onSubmit }: LoginFormProps) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input
-        className="visually-hidden"
-        type="text"
-        name="username"
-        autoComplete="username"
-        value="pegin-did"
-        readOnly
-        tabIndex={-1}
-        aria-hidden="true"
-      />
       <div className="tui-prompt-row">
         <label className="tui-prompt" htmlFor="seed-phrase">
           seed&gt;
@@ -58,7 +48,7 @@ export function LoginForm({ loading, wasmReady, onSubmit }: LoginFormProps) {
             setSeedPhrase(event.target.value)
           }}
           placeholder="········"
-          autoComplete="current-password"
+          autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}

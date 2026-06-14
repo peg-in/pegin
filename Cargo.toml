@@ -44,6 +44,7 @@ chia-sdk-test    = "0.26"
 
 # ── Backend framework (Loco) ──────────────────────────────────────────────────
 loco-rs = { version = "0.16", features = ["with-db"] }
+axum    = "0.7"
 
 # ── Database (PostgreSQL) ─────────────────────────────────────────────────────
 sea-orm           = { version = "1.1", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
@@ -63,6 +64,7 @@ chacha20poly1305  = "0.10"
 rand              = "0.8"
 hkdf              = "0.12"
 k256              = { version = "0.13", features = ["ecdsa"] }
+getrandom         = "0.2"
 
 # ── Async runtime ─────────────────────────────────────────────────────────────
 tokio = { version = "1.40", features = ["full"] }
@@ -77,6 +79,7 @@ quick-xml  = "0.37"
 uuid       = { version = "1.11", features = ["v4", "serde"] }
 chrono     = { version = "0.4",  features = ["serde"] }
 thiserror  = "2"
+dotenvy    = "0.15"
 
 # ── Storage ───────────────────────────────────────────────────────────────────
 rocksdb = "0.22"

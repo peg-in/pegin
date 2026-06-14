@@ -17,8 +17,8 @@ docs/pegin-issues/issues/
 ```
 
 - File naming: `feat-10 - pegin-wasm crate scaffold and build pipeline.md`.
-- Each issue has YAML front-matter: `id`, `status` (`backlog` → `in-progress` → `done`),
-  `branch`, and `[[wikilinks]]` to its epic / blockers / blocked features.
+- Each issue has YAML front-matter: `id`, `status`, **`milestone`**, `branch`, and wikilinks.
+- **Milestone overview:** `docs/pegin-issues/Project Overview.md` and `issues/milestones/`.
 - **Workflow:** pick the issue → check out its `branch` → implement against its acceptance
   criteria → update the issue `status`. Keep changes scoped to that issue's "In Scope".
 - **Feature sizing:** Each `feat-N` should target **~1 000 lines of code** per PR (soft guidance,

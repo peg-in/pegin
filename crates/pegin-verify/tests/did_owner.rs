@@ -1,5 +1,7 @@
 //! Ground-truth DID ownership test against a real testnet11 DID (launcher 42fd7ee4…),
 //! owned by the wallet in crates/pegin-wasm/.env. Fixture captured via `get_puzzle_and_solution`.
+// Module-level allow: the fixture helpers below use `unwrap` outside `#[test]`
+// fns, which `allow-unwrap-in-tests` does not cover in an integration test crate.
 #![allow(clippy::unwrap_used)]
 
 use pegin_verify::did::{expected_owner_p2, parse_owner_p2_hash, CoinParts};

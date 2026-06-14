@@ -9,26 +9,32 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
-const CRATE_SRC = join(ROOT, 'crates/pegin-wasm/src')
 const WASM_BIN = join(ROOT, 'packages/sdk/wasm/pegin_wasm_bg.wasm')
 
-function newestMtimeMs(dir) {
-  let newest = 0
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name)
-    if (entry.isDirectory()) {
-      newest = Math.max(newest, newestMtimeMs(path))
-    } else if (entry.isFile()) {
-      newest = Math.max(newest, statSync(path).mtimeMs)
-    }
-  }
-  return newest
+// Inputs that change the wasm output: the crate sources plus its build config and
+// the pegin-jwt crate it depends on (build.rs there embeds the HKDF salt).
+const WATCHED = [
+  'crates/pegin-wasm/src',
+  'crates/pegin-wasm/Cargo.toml',
+  'crates/pegin-jwt/src',
+  'crates/pegin-jwt/Cargo.toml',
+  'crates/pegin-jwt/build.rs',
+].map((p) => join(ROOT, p))
+
+// Stops at the first file newer than `threshold` instead of walking every tree.
+function anyNewerThan(path, threshold) {
+  if (!existsSync(path)) return false
+  const stat = statSync(path)
+  if (!stat.isDirectory()) return stat.mtimeMs > threshold
+  return readdirSync(path, { withFileTypes: true }).some((entry) =>
+    anyNewerThan(join(path, entry.name), threshold),
+  )
 }
 
 function needsRebuild() {
   if (!existsSync(WASM_BIN)) return true
   const wasmMtime = statSync(WASM_BIN).mtimeMs
-  return newestMtimeMs(CRATE_SRC) > wasmMtime
+  return WATCHED.some((path) => anyNewerThan(path, wasmMtime))
 }
 
 function wasmPackAvailable() {

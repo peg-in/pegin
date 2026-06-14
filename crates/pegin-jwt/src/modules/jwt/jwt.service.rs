@@ -6,7 +6,6 @@ use k256::ecdsa::{
     signature::Signer, signature::Verifier, Signature as EcdsaSignature, VerifyingKey,
 };
 use serde_json::json;
-use sha2::{Digest, Sha256};
 
 use crate::shared::error::JwtError;
 use crate::shared::types::{ConfirmationClaim, PeginJwtPayload};
@@ -43,9 +42,9 @@ pub fn mint_es256k(
     let header_b64 = es256k_header(did, &es256k_jwk(&signing_key));
     let payload_b64 = URL_SAFE_NO_PAD.encode(payload_json);
     let signing_input = format!("{header_b64}.{payload_b64}");
-    let digest = Sha256::digest(signing_input.as_bytes());
+    // `Signer::try_sign` hashes with SHA-256 internally (ES256K) — don't pre-hash.
     let sig: EcdsaSignature = signing_key
-        .try_sign(&digest)
+        .try_sign(signing_input.as_bytes())
         .map_err(|e| JwtError::InvalidToken(format!("ES256K sign failed: {e}")))?;
     let sig_b64 = URL_SAFE_NO_PAD.encode(sig.to_bytes());
     Ok(format!("{signing_input}.{sig_b64}"))
@@ -162,7 +161,7 @@ fn validate_claims(
     expected_nonce: Option<&str>,
     now: u64,
 ) -> Result<(), JwtError> {
-    if payload.exp < now {
+    if payload.exp <= now {
         return Err(JwtError::Expired);
     }
     if payload.iss != payload.sub {
@@ -206,9 +205,9 @@ fn verify_es256k_signature(
         decode_bytes_segment(sig_b64, "JWT signature").map_err(JwtError::InvalidToken)?;
     let signature = EcdsaSignature::from_bytes(&sig_bytes.into())
         .map_err(|e| JwtError::InvalidToken(format!("invalid ES256K signature: {e}")))?;
-    let digest = Sha256::digest(signing_input.as_bytes());
+    // `Verifier::verify` hashes with SHA-256 internally — pass the raw signing input.
     verifying_key
-        .verify(&digest, &signature)
+        .verify(signing_input.as_bytes(), &signature)
         .map_err(|_| JwtError::InvalidSignature)
 }
 
@@ -240,7 +239,7 @@ pub fn verify_bls_legacy_with_pubkey(
         return Err(JwtError::UnsupportedAlgorithm(alg.to_owned()));
     }
     let payload = legacy_payload(payload_b64)?;
-    if payload.exp < now {
+    if payload.exp <= now {
         return Ok(false);
     }
     if payload.iss != payload.sub {

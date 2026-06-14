@@ -31,7 +31,7 @@ zeroize              = { workspace = true }
 # wasm32-unknown-unknown, and `wasm-pack test` builds dev-dependencies too.
 [dev-dependencies]
 wasm-bindgen-test = { workspace = true }
-dotenvy               = "0.15"
+dotenvy               = { workspace = true }
 bip39                 = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]

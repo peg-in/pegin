@@ -1,4 +1,6 @@
-// @pegin/sdk public surface — import only from here, never from internal paths.
+/**
+ * @pegin/sdk public surface — import only from here, never from internal paths.
+ */
 
 // entities
 export type { PeginSession } from './entities/session/index.js'

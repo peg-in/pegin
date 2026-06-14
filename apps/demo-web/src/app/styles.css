@@ -324,3 +324,10 @@ body::after {
     opacity: 0;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .tui-spinner,
+  .tui-blink {
+    animation: none;
+  }
+}

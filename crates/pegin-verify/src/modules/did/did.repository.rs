@@ -66,9 +66,17 @@ pub struct CoinsetClient {
 
 impl CoinsetClient {
     pub fn new(base_url: impl Into<String>) -> Self {
+        // Cap every coinset call so an unresponsive upstream can't hang a request.
+        // `build()` only fails on TLS/resolver init — and the `default()` fallback is
+        // `Client::new()`, which panics on that same failure, so there's no path to a
+        // silently no-timeout client.
+        let http = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .unwrap_or_default();
         Self {
             base_url: base_url.into().trim_end_matches('/').to_owned(),
-            http: reqwest::Client::new(),
+            http,
         }
     }
 

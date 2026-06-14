@@ -11,15 +11,24 @@ export interface PeginNoncePayload {
   aud: string
 }
 
+/** Abort a stalled auth request rather than hang the login flow. */
+const REQUEST_TIMEOUT_MS = 15_000
+
 /** Same-origin PEGIN auth API (`/api/pegin` by default). */
 export class PeginAuthClient {
   constructor(private readonly apiPrefix = '/api/pegin') {}
 
-  async requestNonce(): Promise<PeginNoncePayload> {
-    const res = await fetch(`${this.apiPrefix}/nonce`, {
-      method: 'POST',
+  /** Same-origin fetch with credentials and a timeout applied to every call. */
+  private request(path: string, init: RequestInit = {}): Promise<Response> {
+    return fetch(`${this.apiPrefix}${path}`, {
       credentials: 'include',
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      ...init,
     })
+  }
+
+  async requestNonce(): Promise<PeginNoncePayload> {
+    const res = await this.request('/nonce', { method: 'POST' })
     if (!res.ok) {
       throw new Error(await readError(res, 'failed to start login'))
     }
@@ -31,9 +40,8 @@ export class PeginAuthClient {
     jwt: string
     challengeSig?: string
   }): Promise<PeginServerSession> {
-    const res = await fetch(`${this.apiPrefix}/session`, {
+    const res = await this.request('/session', {
       method: 'POST',
-      credentials: 'include',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     })
@@ -44,7 +52,7 @@ export class PeginAuthClient {
   }
 
   async getSession(): Promise<PeginServerSession | null> {
-    const res = await fetch(`${this.apiPrefix}/session`, { credentials: 'include' })
+    const res = await this.request('/session')
     if (res.status === 401) return null
     if (!res.ok) {
       throw new Error(await readError(res, 'failed to load session'))
@@ -53,10 +61,7 @@ export class PeginAuthClient {
   }
 
   async logout(): Promise<void> {
-    const res = await fetch(`${this.apiPrefix}/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    })
+    const res = await this.request('/logout', { method: 'POST' })
     if (!res.ok && res.status !== 204) {
       throw new Error(await readError(res, 'logout failed'))
     }

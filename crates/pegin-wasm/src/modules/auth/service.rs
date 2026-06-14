@@ -7,6 +7,8 @@ use crate::modules::keys::service::derive_wallet_keys_inner;
 pub const NO_DID_ON_CHAIN: &str = "no on-chain DID found for these keys";
 
 /// Derives keys, resolves the on-chain DID, mints a JWT — secret keys never cross to JS.
+// On native the on-chain lookup is compiled out (wasm32-only), so the fn has no
+// `.await`; keep it `async` for a single signature across targets.
 #[cfg_attr(not(target_arch = "wasm32"), allow(clippy::unused_async))]
 pub async fn login_with_seed_inner(
     mnemonic: &str,

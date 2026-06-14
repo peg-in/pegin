@@ -15,11 +15,10 @@ async fn main() {
         match flag.as_str() {
             "--launcher" => launcher = args.next(),
             "--did-pk" => did_pk = args.next(),
-            "--coinset-url" => {
-                if let Some(v) = args.next() {
-                    url = v;
-                }
-            }
+            "--coinset-url" => match args.next() {
+                Some(v) => url = v,
+                None => fail("--coinset-url requires a value"),
+            },
             other => fail(&format!("unexpected argument '{other}'")),
         }
     }

@@ -1,3 +1,4 @@
+//! DID parsing, coinset lookups, and on-chain owner verification.
 #[path = "did.helper.rs"]
 mod did_helper;
 #[path = "did.repository.rs"]

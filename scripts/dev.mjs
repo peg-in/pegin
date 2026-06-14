@@ -16,6 +16,10 @@ const demos = [
 /** Spawns `pnpm run <script>` with inherited stdio and mirrors its exit code. */
 function run(script) {
   const child = spawn('pnpm', ['run', script], { stdio: 'inherit' })
+  child.on('error', (err) => {
+    process.stderr.write(`failed to launch pnpm: ${err.message}\n`)
+    process.exit(1)
+  })
   child.on('exit', (code) => process.exit(code ?? 0))
 }
 

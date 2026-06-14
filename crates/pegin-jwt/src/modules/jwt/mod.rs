@@ -1,3 +1,4 @@
+//! JWT module: ES256K/BLS mint + verify and the helpers behind them.
 #[path = "jwt.helper.rs"]
 mod jwt_helper;
 #[path = "jwt.service.rs"]

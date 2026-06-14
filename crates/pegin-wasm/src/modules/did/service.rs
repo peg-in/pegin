@@ -115,6 +115,9 @@ pub async fn resolve_did_and_owner<C: CoinsetClient>(
                 let one = client
                     .get_coin_records_by_hints(std::slice::from_ref(hint))
                     .await?;
+                if one.len() > MAX_HINT_RECORDS {
+                    return Err("coinset returned too many coin records".to_owned());
+                }
                 if let Some(record) = pick_unspent_did_record(&one) {
                     let launcher_id = find_launcher_id(client, &coin_id_hex(record)?).await?;
                     return Ok(Some((encode_did(&launcher_id)?, index)));
