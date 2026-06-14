@@ -107,10 +107,14 @@ pub async fn resolve_did_and_owner<C: CoinsetClient>(
             return Err("coinset returned too many coin records".to_owned());
         }
         if pick_unspent_did_record(&records).is_some() {
-            // The batch carries an owned DID — pin the exact index with single-hint queries.
-            for index in start..end {
-                let hint = observer_hint_at(&obs, index);
-                let one = client.get_coin_records_by_hints(&[hint]).await?;
+            // The batch carries an owned DID — pin the exact index with single-hint
+            // queries. coinset records aren't tagged with the matching hint, so the
+            // owner index can't be read from `records`; reuse the hints already
+            // derived for this batch rather than recomputing each one.
+            for (index, hint) in (start..end).zip(hints.iter()) {
+                let one = client
+                    .get_coin_records_by_hints(std::slice::from_ref(hint))
+                    .await?;
                 if let Some(record) = pick_unspent_did_record(&one) {
                     let launcher_id = find_launcher_id(client, &coin_id_hex(record)?).await?;
                     return Ok(Some((encode_did(&launcher_id)?, index)));

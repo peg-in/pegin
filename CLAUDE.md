@@ -21,6 +21,10 @@ docs/pegin-issues/issues/
   `branch`, and `[[wikilinks]]` to its epic / blockers / blocked features.
 - **Workflow:** pick the issue → check out its `branch` → implement against its acceptance
   criteria → update the issue `status`. Keep changes scoped to that issue's "In Scope".
+- **Feature sizing:** Each `feat-N` should target **~1 000 lines of code** per PR (soft guidance,
+  not CI-enforced). Above that, split into smaller features before coding — humans must be able to
+  review the diff in one pass. Epics span many features; umbrella tickets that outgrew their scope
+  should defer to sliced children. See `docs/pegin-issues/CLAUDE.md` § Feature sizing.
 - Cross-cutting design docs live in the wiki submodule: `docs/pegin-wiki/`.
 
 ## Repository structure

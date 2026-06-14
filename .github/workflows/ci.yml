@@ -14,7 +14,7 @@ concurrency:
 
 env:
   RUST_CACHE_KEY: pegin-rust-v1
-  PEGIN_JWT_HKDF_SALT: ${{ vars.PEGIN_JWT_HKDF_SALT }}
+  PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
 
 jobs:
   rust-build:

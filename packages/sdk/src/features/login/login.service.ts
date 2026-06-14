@@ -34,8 +34,11 @@ export async function loginWithPegin(
   options: LoginWithPeginOptions = {},
 ): Promise<PeginSession> {
   const auth = new PeginAuthClient(options.apiPrefix ?? DEFAULT_API_PREFIX)
-  const { loginId, nonce, aud } = await auth.requestNonce()
-  const wasm = await (options.loadWasm ?? defaultLoadWasm)()
+  // Nonce fetch and WASM init are independent; overlap them to save one round-trip.
+  const [{ loginId, nonce, aud }, wasm] = await Promise.all([
+    auth.requestNonce(),
+    (options.loadWasm ?? defaultLoadWasm)(),
+  ])
   const wallet = await wasm.loginWithSeed(
     mnemonic,
     options.peerUrl ?? null,
