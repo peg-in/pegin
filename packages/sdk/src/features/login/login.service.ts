@@ -51,7 +51,7 @@ export async function loginWithPegin(
     jwt: wallet.jwt,
     ...(wallet.challengeSig !== undefined ? { challengeSig: wallet.challengeSig } : {}),
   })
-  return toPeginSession(session)
+  return toPeginSession(session, wallet.jwt)
 }
 
 /** Restores a server-verified session, or null when logged out / expired. */
@@ -73,12 +73,17 @@ async function defaultLoadWasm(): Promise<PeginWasmLogin> {
   return { loginWithSeed: mod.loginWithSeed.bind(mod) }
 }
 
-function toPeginSession(session: { did: string; sub: string; expiresAt: number }): PeginSession {
+// `jwt` is only available on fresh login (minted client-side); session restore
+// reads it from the HttpOnly cookie server-side, so it defaults to empty there.
+function toPeginSession(
+  session: { did: string; sub: string; expiresAt: number },
+  jwt = '',
+): PeginSession {
   return {
     did: session.did,
     sub: session.sub,
     expiresAt: session.expiresAt,
     username: session.did,
-    jwt: '',
+    jwt,
   }
 }

@@ -15,8 +15,9 @@ concurrency:
 env:
   RUST_CACHE_KEY: pegin-rust-v1
 
-# PEGIN_JWT_HKDF_SALT (build.rs salt embed) is set per-job only where pegin-jwt is
-# compiled — not at workflow level, so jobs like rust-fmt never see the secret.
+# PEGIN_JWT_HKDF_SALT (build.rs salt embed) is scoped to the jobs/steps that compile
+# pegin-jwt — never at workflow level, so rust-fmt, pnpm install, lint, and smoke
+# steps never see the secret.
 
 jobs:
   rust-build:
@@ -109,8 +110,6 @@ jobs:
     name: TypeScript + WASM
     needs: rust-build
     runs-on: ubuntu-latest
-    env:
-      PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -143,14 +142,19 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Release wasm builds; test deps were warmed in rust-build.
+      # Salt scoped to the two steps that compile pegin-jwt (via build.rs).
       - name: Build wasm packages (node + bundler)
         run: pnpm build:wasm:node && pnpm build:wasm
+        env:
+          PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
 
       - name: Build, lint, and test (TS)
         run: pnpm -r build && pnpm -r lint && pnpm exec eslint "crates/**/*.mjs" && pnpm -r test
 
       - name: Browser wallet tests (headless Chrome)
         run: wasm-pack test --headless --chrome crates/pegin-wasm
+        env:
+          PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
 
       - name: On-chain smoke test (Node)
         run: pnpm smoke
