@@ -1,15 +1,30 @@
 import type { PeginSession } from '../../entities/session/index.js'
 import { PeginAuthClient } from '../../shared/api/pegin-auth-api.js'
+import { logger } from '../../shared/lib/logger.js'
 
-/** Minimal WASM surface required for seed login. */
+/** Identity material minted in WASM — secrets never leave the browser. */
+export interface PeginWalletLogin {
+  did: string
+  jwt: string
+  challengeSig?: string
+  walletFp: string
+  ownerIndex: number
+}
+
+/**
+ * Minimal WASM surface required for seed login. Resolution reads only public chain
+ * data (coinset hints) and caches the result; secrets never cross to the relay.
+ */
 export interface PeginWasmLogin {
   loginWithSeed(
     mnemonic: string,
-    peer_url: string | null | undefined,
+    scan_limit: number,
     ttl_seconds: number,
     aud: string,
     challenge_nonce?: string | null,
-  ): Promise<{ did: string; jwt: string; challengeSig?: string }>
+  ): Promise<PeginWalletLogin>
+  /** Caches the relay-confirmed DID so the next login skips the on-chain scan. */
+  rememberDid?(walletFp: string, did: string, ownerIndex: number): void
 }
 
 export interface LoginWithPeginOptions {
@@ -17,8 +32,8 @@ export interface LoginWithPeginOptions {
   apiPrefix?: string
   /** JWT lifetime passed to WASM. Default 3600. */
   jwtTtlSeconds?: number
-  /** Coinset peer for on-chain DID lookup. Default null (testnet11). */
-  peerUrl?: string | null
+  /** Highest address index the first-login DID scan probes. Default 0 → WASM default (10 000). */
+  scanLimit?: number
   /** Loads the browser WASM module (must alias `@pegin/wasm` in bundler). */
   loadWasm?: () => Promise<PeginWasmLogin>
 }
@@ -41,7 +56,7 @@ export async function loginWithPegin(
   ])
   const wallet = await wasm.loginWithSeed(
     mnemonic,
-    options.peerUrl ?? null,
+    options.scanLimit ?? 0,
     options.jwtTtlSeconds ?? 3600,
     aud,
     nonce,
@@ -51,6 +66,13 @@ export async function loginWithPegin(
     jwt: wallet.jwt,
     ...(wallet.challengeSig !== undefined ? { challengeSig: wallet.challengeSig } : {}),
   })
+  // Cache the relay-confirmed DID so the next login skips the on-chain scan. Best-effort:
+  // the user is already authenticated, so a cache failure must not reject the login.
+  try {
+    wasm.rememberDid?.(wallet.walletFp, session.did, wallet.ownerIndex)
+  } catch (err) {
+    logger.warn('rememberDid cache write failed; continuing with the session', err)
+  }
   return toPeginSession(session, wallet.jwt)
 }
 
@@ -70,7 +92,10 @@ export async function logoutPegin(apiPrefix = DEFAULT_API_PREFIX): Promise<void>
 async function defaultLoadWasm(): Promise<PeginWasmLogin> {
   const mod = await import('@pegin/wasm')
   await mod.default()
-  return { loginWithSeed: mod.loginWithSeed.bind(mod) }
+  return {
+    loginWithSeed: mod.loginWithSeed.bind(mod),
+    rememberDid: mod.rememberDid.bind(mod),
+  }
 }
 
 // `jwt` is only available on fresh login (minted client-side); session restore

@@ -2,8 +2,8 @@
 /**
  * Smoke test for the pegin-wasm Node build. Never prints the mnemonic.
  *   Part 1 — deterministic zero-entropy phrase, offline, always runs.
- *   Part 2 — real on-chain flow with a personal testnet wallet; runs when
- *            PEGIN_MNEMONIC and PEGIN_DID are set (env vars > .env), else skips.
+ *   Part 2 — configured wallet from env/.env (CI: secrets/vars), runs when set, else skips.
+ * No real wallet strings are hardcoded; supply them via PEGIN_MNEMONIC / PEGIN_DID.
  * Build first: wasm-pack build --target nodejs --out-dir pkg-node
  */
 
@@ -12,22 +12,22 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  alternateTestPhrase,
   deterministicTestPhrase,
   DETERMINISTIC_DID_PK,
 } from "./test-support/deterministic-phrase.mjs";
 import {
   deriveWalletKeys,
-  getDid,
   mintJwt,
   signChallenge,
   verifyJwt,
 } from "./pkg-node/pegin_wasm.js";
 
-const TEST_AUD = "https://smoke.example";
-
+// Local convenience: load a sibling .env. CI injects PEGIN_* directly (no file present),
+// so env vars set by the pipeline take effect without it.
 const envFile = join(dirname(fileURLToPath(import.meta.url)), ".env");
 if (existsSync(envFile)) process.loadEnvFile(envFile);
+
+const TEST_AUD = "https://smoke.example";
 
 // Reporter output is the program's product — stdout/stderr, not logging.
 const out = (line) => process.stdout.write(`${line}\n`);
@@ -63,8 +63,9 @@ await test("challenge signature is 96 bytes and deterministic", () => {
   assert.equal(sig, signChallenge(keys, "smoke-test-nonce"));
 });
 
-const fakeDid = "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
-const token = mintJwt(keys, fakeDid, TEST_AUD, 600);
+// Synthetic, non-wallet DID (launcher = 0x11 × 32) — used only as a JWT subject.
+const syntheticDid = "did:chia:1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsx2z7xu";
+const token = mintJwt(keys, syntheticDid, TEST_AUD, 600);
 
 await test("minted ES256K JWT verifies for the bound audience", () => {
   assert.equal(verifyJwt(token, TEST_AUD, undefined), true);
@@ -82,35 +83,32 @@ await test("JWT fails verification for a different audience", () => {
 
 await test("JWT with embedded nonce verifies when nonce matches", () => {
   const nonce = "smoke-nonce-1";
-  const withNonce = mintJwt(keys, fakeDid, TEST_AUD, 600, nonce);
+  const withNonce = mintJwt(keys, syntheticDid, TEST_AUD, 600, nonce);
   assert.equal(verifyJwt(withNonce, TEST_AUD, nonce), true);
 });
 
-out("\nPart 2 — personal testnet wallet (on-chain via coinset.org)");
+// lookupDid / loginWithSeed scan public coinset on a cache miss, so they need the
+// network and a browser-like env — exercised by the wasm-pack headless tests, not here.
+
+out("\nPart 2 — configured wallet (PEGIN_MNEMONIC / PEGIN_DID from env or .env)");
 
 const { PEGIN_MNEMONIC, PEGIN_DID } = process.env;
-if (!PEGIN_MNEMONIC || !PEGIN_DID) {
-  out("  SKIPPED — set PEGIN_MNEMONIC and PEGIN_DID (env or .env) to enable");
+if (!PEGIN_MNEMONIC) {
+  out("  SKIPPED — set PEGIN_MNEMONIC (CI secret / .env) to enable");
 } else {
   const myKeys = deriveWalletKeys(PEGIN_MNEMONIC);
-  let myDid = await getDid(myKeys, null);
-
-  if (myDid == null) {
-    out(
-      "  SKIPPED — no on-chain DID for PEGIN_MNEMONIC on testnet11; " +
-        "ensure the mnemonic created PEGIN_DID (or unset Part 2 env vars)"
-    );
+  await test("derives a DID public key for the configured wallet", () => {
+    assert.match(myKeys.didPkHex, /^[0-9a-f]{96}$/);
+  });
+  if (PEGIN_DID) {
+    await test("mints + verifies a JWT bound to PEGIN_DID", () => {
+      const t = mintJwt(myKeys, PEGIN_DID, TEST_AUD, 600);
+      assert.equal(verifyJwt(t, TEST_AUD, undefined), true);
+    });
   } else {
-    await test("personal DID is verified on-chain", () => {
-      assert.match(String(myDid), /^did:chia:1/);
-      if (PEGIN_DID) assert.equal(myDid, PEGIN_DID);
-    });
-
-    await test("personal JWT mints and verifies", () => {
-      const myToken = mintJwt(myKeys, myDid, TEST_AUD, 600);
-      assert.equal(verifyJwt(myToken, TEST_AUD, undefined), true);
-    });
+    out("  note — also set PEGIN_DID to test JWT binding to your DID");
   }
+  myKeys.free();
 }
 
 if (failures > 0) {

@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use pegin_jwt::verify_token;
 
 use crate::modules::challenge::verify_challenge_signature;
-use crate::modules::did::{launcher_id_hex, verify_did_owner, CoinsetClient};
+use crate::modules::did::{launcher_id_hex, resolve_login_did, verify_did_owner, CoinsetClient};
 use crate::shared::error::VerifyError;
 
 /// Inputs for [`verify_login`].
@@ -45,18 +45,26 @@ pub async fn verify_login(input: VerifyLoginInput<'_>) -> Result<VerifiedLogin, 
         }
 
         if let Some(client) = input.coinset {
-            // Bind cnf.did_pk to the DID's on-chain owner — not just existence. Fail-closed:
-            // any coinset/parse error propagates as Err, so an incomplete proof rejects the login.
-            let launcher = launcher_id_hex(&jwt.did).map_err(VerifyError::InvalidDid)?;
             let pk_bytes: [u8; 48] = pk_bytes.as_slice().try_into().map_err(|_| {
                 VerifyError::InvalidDid("cnf.did_pk must be 48-byte hex".to_owned())
             })?;
+            // First login may assert owner_pk as iss/sub; resolve the canonical did:chia here.
+            let canonical_did = resolve_login_did(&jwt.did, &pk_bytes, &client)
+                .await
+                .map_err(VerifyError::InvalidDid)?;
+            let launcher = launcher_id_hex(&canonical_did).map_err(VerifyError::InvalidDid)?;
             let owned = verify_did_owner(&client, &launcher, &pk_bytes)
                 .await
                 .map_err(VerifyError::Coinset)?;
             if !owned {
                 return Err(VerifyError::DidNotOwned);
             }
+            return Ok(VerifiedLogin {
+                did: canonical_did,
+                aud: jwt.aud,
+                did_pk_hex: jwt.did_pk_hex,
+                nonce: jwt.nonce,
+            });
         }
     }
 
@@ -85,7 +93,7 @@ mod tests {
     #[tokio::test]
     async fn verifies_jwt_and_optional_challenge() {
         let sk = SecretKey::from_bytes(&[3u8; 32]).expect("key");
-        let did = "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
+        let did = "did:chia:1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsx2z7xu";
         let did_pk_hex = hex::encode(sk.public_key().to_bytes());
         let nonce = "nonce-42";
         let challenge_sig = hex::encode(sign(&sk, nonce.as_bytes()).to_bytes());

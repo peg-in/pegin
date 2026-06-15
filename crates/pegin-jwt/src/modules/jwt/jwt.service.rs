@@ -272,7 +272,7 @@ mod tests {
     #[test]
     fn es256k_round_trip_with_aud_and_nonce() {
         let did_sk = test_did_sk();
-        let did = "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
+        let did = "did:chia:1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsx2z7xu";
         let did_pk_hex = hex::encode(did_sk.public_key().to_bytes());
         let token = mint_es256k(
             &did_sk,

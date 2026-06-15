@@ -156,8 +156,11 @@ jobs:
         env:
           PEGIN_JWT_HKDF_SALT: ${{ secrets.PEGIN_JWT_HKDF_SALT }}
 
+      # Wallet values come only from CI variables/secrets — never hardcoded. The smoke
+      # script skips Part 2 when PEGIN_MNEMONIC is unset, so forks without secrets pass.
       - name: On-chain smoke test (Node)
         run: pnpm smoke
         env:
           PEGIN_MNEMONIC: ${{ secrets.PEGIN_MNEMONIC }}
           PEGIN_DID: ${{ vars.PEGIN_DID }}
+          PEGIN_COINSET_URL: ${{ vars.PEGIN_COINSET_URL }}

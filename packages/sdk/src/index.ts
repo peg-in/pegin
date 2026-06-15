@@ -21,6 +21,7 @@ export type {
   LoginOptions,
   LoginWithPeginOptions,
   PeginWasmLogin,
+  PeginWalletLogin,
   PeginNoncePayload,
   PeginServerSession,
 } from './features/login/index.js'

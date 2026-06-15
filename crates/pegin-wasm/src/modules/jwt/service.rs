@@ -61,7 +61,10 @@ pub fn verify_jwt_inner(
 }
 
 /// Seconds since the Unix epoch — `Date.now()` in the browser, `SystemTime` natively.
+// cast_sign_loss: `Date.now()` is always non-negative, so the signed→unsigned cast is safe.
+// cast_possible_truncation: epoch milliseconds fit far within u64, so no value is truncated.
 #[cfg(target_arch = "wasm32")]
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn current_unix_secs() -> u64 {
     (js_sys::Date::now() / 1000.0) as u64
 }

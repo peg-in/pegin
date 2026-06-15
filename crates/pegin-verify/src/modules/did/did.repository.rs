@@ -136,6 +136,21 @@ impl CoinsetClient {
         Ok(resp.coin_record)
     }
 
+    /// Unspent coin records whose creation was hinted with one of `hints_hex` (`0x…`).
+    pub async fn coins_by_hints(&self, hints_hex: &[String]) -> Result<Vec<CoinRecord>, String> {
+        let resp: CoinRecordsResponse = self
+            .post(
+                "get_coin_records_by_hints",
+                serde_json::json!({
+                    "hints": hints_hex,
+                    "include_spent_coins": false,
+                }),
+            )
+            .await?;
+        check(resp.success, resp.error)?;
+        Ok(resp.coin_records.unwrap_or_default())
+    }
+
     /// Coin records created by spending `parent_id_hex` (`0x…`).
     pub async fn coins_by_parent(&self, parent_id_hex: &str) -> Result<Vec<CoinRecord>, String> {
         let resp: CoinRecordsResponse = self
