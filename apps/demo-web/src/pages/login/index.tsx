@@ -23,7 +23,11 @@ export function LoginPage() {
             {truncateDid(state.session.did)}
           </span>
         </p>
-        <button type="button" className="tui-primary tui-primary-outline" onClick={() => void logout()}>
+        <button
+          type="button"
+          className="tui-primary tui-primary-outline"
+          onClick={() => void logout()}
+        >
           ■ disconnect
         </button>
       </>

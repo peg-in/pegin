@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url))
 const WASM_BIN = join(ROOT, 'packages/sdk/wasm/pegin_wasm_bg.wasm')
+const SDK_LOGIN_DIST = join(ROOT, 'packages/sdk/dist/features/login/login.service.js')
+const SDK_LOGIN_SRC = join(ROOT, 'packages/sdk/src/features/login/login.service.ts')
 
 // Inputs that change the wasm output: the crate sources plus its build config and
 // the pegin-jwt crate it depends on (build.rs there embeds the HKDF salt).
@@ -29,6 +31,12 @@ function anyNewerThan(path, threshold) {
   return readdirSync(path, { withFileTypes: true }).some((entry) =>
     anyNewerThan(join(path, entry.name), threshold),
   )
+}
+
+function needsSdkRebuild() {
+  if (!existsSync(SDK_LOGIN_DIST)) return true
+  if (!existsSync(SDK_LOGIN_SRC)) return false
+  return statSync(SDK_LOGIN_SRC).mtimeMs > statSync(SDK_LOGIN_DIST).mtimeMs
 }
 
 function needsRebuild() {
@@ -53,4 +61,9 @@ if (needsRebuild()) {
   }
   process.stdout.write('pegin-wasm sources changed — rebuilding browser WASM…\n')
   execSync('pnpm build:wasm', { cwd: ROOT, stdio: 'inherit' })
+}
+
+if (needsSdkRebuild()) {
+  process.stdout.write('@pegin/sdk sources changed — rebuilding SDK dist…\n')
+  execSync('pnpm --filter @pegin/sdk build', { cwd: ROOT, stdio: 'inherit' })
 }

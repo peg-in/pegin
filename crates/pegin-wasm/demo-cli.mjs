@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Manual test CLI: mnemonic → BLS keys → on-chain DID lookup → self-signed JWT.
- * Runs the browser WASM in Node ≥ 20.12. Build first:
+ * Manual test CLI: mnemonic → BLS keys → local DID lookup → self-signed JWT.
+ * Identity resolves entirely in WASM (no chain reads); the auth relay resolves the
+ * canonical did:chia from the JWT on first login. Runs the browser WASM in Node ≥ 20.12.
+ * Build first:
  *   wasm-pack build --target nodejs --out-dir pkg-node
- * Usage: node demo-cli.mjs [--peer-url url] [--ttl sec] [--aud origin]
- *        node demo-cli.mjs --skip-chain
+ * Usage: node demo-cli.mjs [--ttl sec] [--aud origin]
  * Prints only the JWT on stdout; diagnostics need LOG_LEVEL=info (wiki: logging-strategy).
  * Mnemonic: PEGIN_MNEMONIC env var > .env next to script > hidden prompt.
  * Test wallets only — never a mnemonic that holds real funds.
@@ -17,10 +18,9 @@ import { createInterface } from "node:readline";
 import { Writable } from "node:stream";
 import { logger } from "./logger.mjs";
 import {
-  defaultPeerUrl,
   deriveWalletKeys,
-  getDid,
-  mintJwt,
+  loginWithSeed,
+  lookupDid,
   verifyJwt,
 } from "./pkg-node/pegin_wasm.js";
 
@@ -30,16 +30,14 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 /**
  * @param {string[]} argv - CLI args without the node/script prefix
- * @returns {{peerUrl: string|null, ttl: number, skipChain?: boolean}}
+ * @returns {{ttl: number, aud: string|null}}
  */
 function parseArgs(argv) {
-  const args = { ttl: 3600, peerUrl: null, aud: null };
+  const args = { ttl: 3600, aud: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--ttl") args.ttl = Number(argv[++i]);
-    else if (a === "--peer-url") args.peerUrl = argv[++i];
     else if (a === "--aud") args.aud = argv[++i];
-    else if (a === "--skip-chain") args.skipChain = true;
     else if (a.startsWith("--")) {
       logger.error(`unknown flag '${a}'`);
       process.exit(1);
@@ -90,34 +88,22 @@ const keys = deriveWalletKeys(mnemonic);
 logger.info(`wallet pk: ${keys.walletPkHex}`);
 logger.info(`did pk: ${keys.didPkHex}`);
 
-const peerUrl = args.peerUrl ?? defaultPeerUrl();
-let did;
-if (args.skipChain) {
-  did = "did:chia:0000000000000000000000000000000000000000000000000000000000000000";
-  logger.info(`did: ${did} (on-chain check SKIPPED)`);
-} else {
-  try {
-    did = await getDid(keys, peerUrl);
-    if (did === null || did === undefined) {
-      logger.error("no on-chain DID found for these keys");
-      process.exit(1);
-    }
-  } catch (e) {
-    logger.error(`DID lookup failed: ${e.message}`);
-    process.exit(1);
-  }
-  logger.info(`did: ${did} (verified on-chain)`);
-}
+// Resolves the DID by scanning public coinset hints (first call only; then cached).
+const identity = await lookupDid(keys, 0);
+keys.free();
+logger.info(`owner index ${identity.ownerIndex}, owner pk: ${identity.ownerPk}`);
+logger.info(`did: ${identity.did ?? "(no on-chain DID found for this wallet)"}`);
 
-const token = mintJwt(keys, did, args.aud ?? 'https://localhost', args.ttl);
-const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString());
+// Mints a JWT signed by the resolved owner key — secrets stay in WASM.
+const aud = args.aud ?? "https://localhost";
+const session = await loginWithSeed(mnemonic, 0, args.ttl, aud, undefined);
+const payload = JSON.parse(Buffer.from(session.jwt.split(".")[1], "base64url").toString());
 logger.info(`claims: ${JSON.stringify(payload)}`);
 
-const aud = args.aud ?? 'https://localhost';
-if (!verifyJwt(token, aud, undefined)) {
+if (!verifyJwt(session.jwt, aud, undefined)) {
   logger.error("self-verification of the minted JWT failed");
   process.exit(1);
 }
 
 // The JWT is the program output — stdout stays clean for piping.
-process.stdout.write(`${token}\n`);
+process.stdout.write(`${session.jwt}\n`);

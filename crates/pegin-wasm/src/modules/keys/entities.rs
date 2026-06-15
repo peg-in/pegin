@@ -1,4 +1,4 @@
-use chia_bls::{DerivableKey, PublicKey, SecretKey};
+use chia_bls::{DerivableKey, SecretKey};
 use wasm_bindgen::prelude::*;
 
 use super::helper::zeroize_secret_key;
@@ -29,14 +29,15 @@ impl Drop for WalletKeys {
 }
 
 impl WalletKeys {
-    /// Unhardened observer public key at m/12381/8444/2 — derives address hints.
-    pub(crate) fn observer_intermediate_pk(&self) -> PublicKey {
+    /// Unhardened observer public key at m/12381/8444/2 — the address-key root the
+    /// DID-owner scan derives address hints from (`did_lookup::scan`, browser/tests only).
+    #[cfg(any(target_arch = "wasm32", test))]
+    pub(crate) fn observer_intermediate_pk(&self) -> chia_bls::PublicKey {
         self.observer_intermediate_sk.public_key()
     }
 
     /// Raw secret key of the wallet address at observer `index` — the DID owner key.
-    /// Used only by the browser login path; native builds never sign DID proofs.
-    #[cfg_attr(not(target_arch = "wasm32"), allow(dead_code))]
+    /// Login signs the challenge and JWT with this key so `cnf.did_pk` binds to the owner.
     pub(crate) fn owner_secret_at(&self, index: u32) -> SecretKey {
         self.observer_intermediate_sk.derive_unhardened(index)
     }

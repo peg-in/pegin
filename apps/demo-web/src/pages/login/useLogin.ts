@@ -13,11 +13,15 @@ export type LoginState =
 function loginErrorMessage(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err)
   if (msg === 'invalid mnemonic') return 'Invalid seed phrase'
+  // Matches both relay messages: "no on-chain DID found…" and "…for this owner key".
   if (msg.includes('no on-chain DID')) {
     return 'No active DID on testnet11 for this seed phrase — use a wallet that created a DID on testnet'
   }
   if (msg.includes('login verification failed') || msg.includes('audience mismatch')) {
     return 'Login could not be verified — try again'
+  }
+  if (msg.includes('upstream verification unavailable')) {
+    return 'Auth relay could not reach testnet — try again shortly'
   }
   return 'Login failed — check your connection and try again'
 }

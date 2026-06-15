@@ -61,7 +61,9 @@ pub fn verify_jwt_inner(
 }
 
 /// Seconds since the Unix epoch — `Date.now()` in the browser, `SystemTime` natively.
+// `Date.now()` is whole milliseconds since the epoch: always positive and far within u64.
 #[cfg(target_arch = "wasm32")]
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 fn current_unix_secs() -> u64 {
     (js_sys::Date::now() / 1000.0) as u64
 }
