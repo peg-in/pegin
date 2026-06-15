@@ -19,8 +19,9 @@ declare module '@pegin/wasm' {
 
   /**
    * Resolves login identity from wallet keys. Cache hit is instant; a first-login
-   * miss scans public coinset hints (no secrets leave the browser). `scan_limit`
-   * caps the address index probed (0 → default 10 000).
+   * miss scans public coinset hints (no secrets leave the browser).
+   * @param keys - wallet keys used for identity resolution
+   * @param scan_limit - highest address index to probe; 0 uses the default (10 000)
    */
   export function lookupDid(keys: WalletKeys, scan_limit: number): Promise<DidIdentity>
 

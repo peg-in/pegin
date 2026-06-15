@@ -1,5 +1,6 @@
 import type { PeginSession } from '../../entities/session/index.js'
 import { PeginAuthClient } from '../../shared/api/pegin-auth-api.js'
+import { logger } from '../../shared/lib/logger.js'
 
 /** Identity material minted in WASM — secrets never leave the browser. */
 export interface PeginWalletLogin {
@@ -65,8 +66,13 @@ export async function loginWithPegin(
     jwt: wallet.jwt,
     ...(wallet.challengeSig !== undefined ? { challengeSig: wallet.challengeSig } : {}),
   })
-  // Cache the relay-confirmed DID so the next login skips the on-chain scan.
-  wasm.rememberDid?.(wallet.walletFp, session.did, wallet.ownerIndex)
+  // Cache the relay-confirmed DID so the next login skips the on-chain scan. Best-effort:
+  // the user is already authenticated, so a cache failure must not reject the login.
+  try {
+    wasm.rememberDid?.(wallet.walletFp, session.did, wallet.ownerIndex)
+  } catch (err) {
+    logger.warn('rememberDid cache write failed; continuing with the session', err)
+  }
   return toPeginSession(session, wallet.jwt)
 }
 

@@ -93,7 +93,7 @@ mod tests {
     #[tokio::test]
     async fn verifies_jwt_and_optional_challenge() {
         let sk = SecretKey::from_bytes(&[3u8; 32]).expect("key");
-        let did = "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
+        let did = "did:chia:1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsx2z7xu";
         let did_pk_hex = hex::encode(sk.public_key().to_bytes());
         let nonce = "nonce-42";
         let challenge_sig = hex::encode(sign(&sk, nonce.as_bytes()).to_bytes());

@@ -48,8 +48,8 @@ mod tests {
     use crate::test_util::deterministic_test_phrase;
 
     const DID_BECH32M: &str =
-        "did:chia:1gt7hae94wd0c33v07k4kkwgjy9jjtcnzhwvl5yxuvmj28mqsnsjqvgw9uu";
-    const LAUNCHER_HEX: &str = "42fd7ee4b5735f88c58ff5ab6b3912216525e262bb99fa10dc66e4a3ec109c24";
+        "did:chia:1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygsx2z7xu";
+    const LAUNCHER_HEX: &str = "1111111111111111111111111111111111111111111111111111111111111111";
 
     #[test]
     fn encodes_launcher_to_canonical_did() {

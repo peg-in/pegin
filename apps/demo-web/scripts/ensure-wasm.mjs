@@ -55,12 +55,13 @@ function wasmPackAvailable() {
 }
 
 if (needsRebuild()) {
-  if (!wasmPackAvailable()) {
+  if (wasmPackAvailable()) {
+    process.stdout.write('pegin-wasm sources changed — rebuilding browser WASM…\n')
+    execSync('pnpm build:wasm', { cwd: ROOT, stdio: 'inherit' })
+  } else {
+    // Skip only the WASM rebuild; the SDK rebuild check below must still run.
     process.stdout.write('wasm-pack not installed — skipping browser WASM rebuild\n')
-    process.exit(0)
   }
-  process.stdout.write('pegin-wasm sources changed — rebuilding browser WASM…\n')
-  execSync('pnpm build:wasm', { cwd: ROOT, stdio: 'inherit' })
 }
 
 if (needsSdkRebuild()) {

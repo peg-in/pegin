@@ -196,7 +196,7 @@ mod tests {
     use crate::modules::keys::service::derive_wallet_keys_inner;
     use crate::test_util::deterministic_test_phrase;
 
-    const LAUNCHER_HEX: &str = "42fd7ee4b5735f88c58ff5ab6b3912216525e262bb99fa10dc66e4a3ec109c24";
+    const LAUNCHER_HEX: &str = "1111111111111111111111111111111111111111111111111111111111111111";
     const SINGLETON_LAUNCHER_PH: &str =
         "eff07522495060c066f66f32acc2a77e3a3e737aca8baea4d1a64ea4cdc13da9";
 
