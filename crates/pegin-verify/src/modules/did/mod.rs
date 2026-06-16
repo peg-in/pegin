@@ -5,8 +5,11 @@ mod did_helper;
 mod did_repository;
 mod owner;
 mod resolve;
+#[path = "did.scan.rs"]
+mod scan;
 
 pub use did_helper::launcher_id_hex;
 pub use did_repository::CoinsetClient;
 pub use owner::{expected_owner_p2, is_owner, parse_owner_p2_hash, verify_did_owner, CoinParts};
 pub use resolve::resolve_login_did;
+pub use scan::resolve_did_and_owner;

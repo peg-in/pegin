@@ -26,6 +26,11 @@ getrandom  = { workspace = true }
 # differs from the workspace's 0.25 pin, so it stays crate-local.
 chia-puzzle-types = "0.20"
 
+# `DerivableKey` for the 0.20 chia-bls that chia-wallet-sdk's prelude `PublicKey` and
+# chia-puzzle-types use — the owner scan derives unhardened address hints from it. The
+# 0.23 prelude doesn't re-export the trait, so we name the matching version crate-local.
+chia-bls-020 = { package = "chia-bls", version = "0.20" }
+
 [dev-dependencies]
 serde_json = { workspace = true }
 

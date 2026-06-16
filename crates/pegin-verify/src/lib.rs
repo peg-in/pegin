@@ -3,6 +3,7 @@
 mod modules;
 mod shared;
 
+pub use modules::chain::{account_pk_from_hex, ChainResolver, CoinsetResolver, ResolveError};
 pub use modules::verify::{verify_login, VerifiedLogin, VerifyLoginInput};
 pub use shared::error::VerifyError;
 

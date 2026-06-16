@@ -1,7 +1,24 @@
-// Login page hook — delegates to @pegin/sdk (server-verified session, dynamic aud).
+// Login page hook — delegates to @pegin/sdk (passkey signer, server-verified session).
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { loadPeginSession, loginWithPegin, logoutPegin, type PeginSession } from '@pegin/sdk'
+import {
+  enrollPasskey,
+  loadPeginSession,
+  localStorageVault,
+  loginWithPegin,
+  logoutPegin,
+  PasskeySigner,
+  type PeginSession,
+} from '@pegin/sdk'
+
+/** True once a seed has been sealed under a passkey on this device. */
+function hasEnrolledPasskey(): boolean {
+  try {
+    return localStorageVault().load() !== null
+  } catch {
+    return false
+  }
+}
 
 export type LoginState =
   | { status: 'idle' }
@@ -13,14 +30,21 @@ export type LoginState =
 function loginErrorMessage(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err)
   if (msg === 'invalid mnemonic') return 'Invalid seed phrase'
-  // Matches both relay messages: "no on-chain DID found…" and "…for this owner key".
   if (msg.includes('no on-chain DID')) {
-    return 'No active DID on testnet11 for this seed phrase — use a wallet that created a DID on testnet'
+    return 'No active DID on testnet11 for this passkey — register a DID on a testnet wallet first'
+  }
+  if (msg.includes('PRF')) {
+    return 'This authenticator has no PRF support — use 1Password or a PRF-capable passkey'
+  }
+  if (msg.includes('enroll')) return 'No passkey on this device yet — create one below'
+  if (msg.includes('cancelled')) return 'Passkey prompt cancelled — try again'
+  if (msg.includes('WebAuthn is not available')) {
+    return 'This browser does not support passkeys'
   }
   if (msg.includes('login verification failed') || msg.includes('audience mismatch')) {
     return 'Login could not be verified — try again'
   }
-  if (msg.includes('upstream verification unavailable')) {
+  if (msg.includes('upstream')) {
     return 'Auth relay could not reach testnet — try again shortly'
   }
   return 'Login failed — check your connection and try again'
@@ -28,10 +52,13 @@ function loginErrorMessage(err: unknown): string {
 
 export function useLogin(): {
   state: LoginState
-  login: (seedPhrase: string) => Promise<void>
+  enrolled: boolean
+  enroll: (seedPhrase: string) => Promise<void>
+  login: () => Promise<void>
   logout: () => Promise<void>
 } {
   const [state, setState] = useState<LoginState>({ status: 'restoring' })
+  const [enrolled, setEnrolled] = useState(hasEnrolledPasskey)
   const busy = useRef(false)
 
   useEffect(() => {
@@ -49,30 +76,56 @@ export function useLogin(): {
     }
   }, [])
 
-  const login = useCallback(async (seedPhrase: string) => {
-    if (busy.current) return
-    const mnemonic = seedPhrase.trim()
-    if (!mnemonic) {
-      setState({ status: 'error', message: 'Seed phrase is required' })
-      return
-    }
+  const rpId = () => window.location.hostname
 
+  // Modal sign-in: the browser / 1Password passkey picker opens, the chosen passkey's PRF
+  // secret decrypts the stored seed, and the relay verifies the resolved DID.
+  const login = useCallback(async () => {
+    if (busy.current) return
     busy.current = true
     setState({ status: 'loading' })
+    const signer = new PasskeySigner({ rpId: rpId() })
     try {
-      const session = await loginWithPegin(mnemonic)
+      const session = await loginWithPegin({ signer })
       setState({ status: 'success', session })
     } catch (err) {
       setState({ status: 'error', message: loginErrorMessage(err) })
     } finally {
+      await signer.dispose().catch(() => undefined)
       busy.current = false
     }
   }, [])
+
+  // One-time: seal the seed under a new passkey, then log straight in. The seed phrase is
+  // entered only here (enrollment), never on the recurring passkey login path.
+  const enroll = useCallback(
+    async (seedPhrase: string) => {
+      if (busy.current) return
+      const mnemonic = seedPhrase.trim()
+      if (!mnemonic) {
+        setState({ status: 'error', message: 'Seed phrase is required to enroll' })
+        return
+      }
+      busy.current = true
+      setState({ status: 'loading' })
+      try {
+        await enrollPasskey({ rpId: rpId(), userName: 'pegin', mnemonic })
+        setEnrolled(true)
+      } catch (err) {
+        setState({ status: 'error', message: loginErrorMessage(err) })
+        busy.current = false
+        return
+      }
+      busy.current = false
+      await login()
+    },
+    [login],
+  )
 
   const logout = useCallback(async () => {
     await logoutPegin()
     setState({ status: 'idle' })
   }, [])
 
-  return { state, login, logout }
+  return { state, enrolled, enroll, login, logout }
 }

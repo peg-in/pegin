@@ -16,14 +16,23 @@ export {
   logoutPegin,
   PeginAuthClient,
 } from './features/login/index.js'
+export { PasskeySigner, enrollPasskey, localStorageVault } from './features/login/index.js'
 export type {
   PeginButtonOptions,
   LoginOptions,
   LoginWithPeginOptions,
-  PeginWasmLogin,
-  PeginWalletLogin,
+  PeginSigner,
+  SignLoginRequest,
+  SignedLogin,
+  IdentityKey,
+  PasskeySignerOptions,
+  EnrollPasskeyOptions,
+  WebAuthnApi,
+  PasskeyVaultStore,
+  VaultBlob,
   PeginNoncePayload,
   PeginServerSession,
+  PeginResolvedOwner,
 } from './features/login/index.js'
 export { beginAuthentication, finishAuthentication } from './features/login/index.js'
 export { beginRegistration, finishRegistration } from './features/register/index.js'

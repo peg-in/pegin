@@ -25,8 +25,14 @@ pub fn derive_wallet_keys_inner(mnemonic: &str) -> Result<WalletKeys, String> {
     // Empty passphrase (Chia default); the full 64-byte seed feeds the master key —
     // truncating changes every derived key and breaks Sage/reference-wallet compatibility.
     let mut seed = mn.to_seed("");
-    let mut master_sk = SecretKey::from_seed(&seed);
+    let keys = derive_from_seed(&seed);
     seed.zeroize();
+    Ok(keys)
+}
+
+/// Master key → hardened wallet/DID keys + unhardened observer account key.
+fn derive_from_seed(seed: &[u8]) -> WalletKeys {
+    let mut master_sk = SecretKey::from_seed(seed);
 
     let wallet_sk = derive_path(
         &master_sk,
@@ -42,11 +48,11 @@ pub fn derive_wallet_keys_inner(mnemonic: &str) -> Result<WalletKeys, String> {
         .derive_unhardened(PATH_WALLET);
     zeroize_secret_key(&mut master_sk);
 
-    Ok(WalletKeys {
+    WalletKeys {
         wallet_sk,
         did_sk,
         observer_intermediate_sk,
-    })
+    }
 }
 
 fn derive_path(master: &SecretKey, path: &[u32]) -> SecretKey {

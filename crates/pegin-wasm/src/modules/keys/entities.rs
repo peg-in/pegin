@@ -29,9 +29,9 @@ impl Drop for WalletKeys {
 }
 
 impl WalletKeys {
-    /// Unhardened observer public key at m/12381/8444/2 — the address-key root the
-    /// DID-owner scan derives address hints from (`did_lookup::scan`, browser/tests only).
-    #[cfg(any(target_arch = "wasm32", test))]
+    /// Unhardened observer public key at m/12381/8444/2 — the watch-only account key the
+    /// relay resolves to the wallet's DID + owning index (feat-37). Used by tests directly.
+    #[cfg(test)]
     pub(crate) fn observer_intermediate_pk(&self) -> chia_bls::PublicKey {
         self.observer_intermediate_sk.public_key()
     }
@@ -61,5 +61,12 @@ impl WalletKeys {
     #[wasm_bindgen(getter, js_name = "didPublicKey")]
     pub fn did_public_key(&self) -> Vec<u8> {
         self.did_sk.public_key().to_bytes().to_vec()
+    }
+
+    /// Watch-only observer account key (m/12381/8444/2), 48-byte BLS hex. The relay
+    /// resolves this to the wallet's DID + owning index — no secret ever leaves WASM.
+    #[wasm_bindgen(getter, js_name = "accountPkHex")]
+    pub fn account_pk_hex(&self) -> String {
+        hex::encode(self.observer_intermediate_sk.public_key().to_bytes())
     }
 }

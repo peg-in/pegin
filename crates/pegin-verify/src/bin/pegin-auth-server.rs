@@ -2,10 +2,10 @@
 //! challenge + on-chain DID **ownership**, and manages an `HttpOnly` session cookie.
 //!
 //! Mount behind the demo at `/api/pegin` (the Vite proxy strips the prefix). Routes:
-//! `POST /nonce`, `POST /session`, `GET /session`, `POST /logout`.
+//! `POST /nonce`, `POST /resolve`, `POST /session`, `GET /session`, `POST /logout`.
 //!
 //! Env: `PEGIN_AUTH_PORT` (default 8787), `PEGIN_COINSET_URL` (default testnet11),
-//! `PEGIN_SESSION_TTL` seconds (default 3600).
+//! `PEGIN_SESSION_TTL` seconds (default 3600), `PEGIN_SCAN_LIMIT` (default 10 000).
 
 // Binary entry point: a poisoned mutex or failed bind is unrecoverable, so `expect` panics
 // are the correct response here (unlike library code, which must return errors).
@@ -24,7 +24,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use pegin_verify::did::CoinsetClient;
-use pegin_verify::{verify_login, VerifyError, VerifyLoginInput};
+use pegin_verify::{
+    account_pk_from_hex, verify_login, ChainResolver, CoinsetResolver, ResolveError, VerifyError,
+    VerifyLoginInput,
+};
 
 const SESSION_COOKIE: &str = "pegin_session";
 const NONCE_TTL_SECS: u64 = 300;
@@ -44,6 +47,7 @@ struct AppState {
     pending: Mutex<HashMap<String, Pending>>,
     sessions: Mutex<HashMap<String, Session>>,
     coinset: CoinsetClient,
+    resolver: CoinsetResolver,
     session_ttl: u64,
 }
 
@@ -53,6 +57,19 @@ struct NonceResponse {
     login_id: String,
     nonce: String,
     aud: String,
+}
+
+#[derive(Deserialize)]
+struct ResolveBody {
+    #[serde(rename = "accountPk")]
+    account_pk: String,
+}
+
+#[derive(Serialize)]
+struct ResolveResponse {
+    did: String,
+    #[serde(rename = "ownerIndex")]
+    owner_index: u32,
 }
 
 #[derive(Deserialize)]
@@ -78,16 +95,21 @@ async fn main() {
     let coinset_url = std::env::var("PEGIN_COINSET_URL")
         .unwrap_or_else(|_| "https://testnet11.api.coinset.org".to_owned());
     let session_ttl = env_parse("PEGIN_SESSION_TTL", 3600);
+    let scan_limit = env_parse("PEGIN_SCAN_LIMIT", 0u32);
 
+    let coinset = CoinsetClient::new(coinset_url);
+    let resolver = CoinsetResolver::new(coinset.clone()).with_scan_limit(scan_limit);
     let state = Arc::new(AppState {
         pending: Mutex::new(HashMap::new()),
         sessions: Mutex::new(HashMap::new()),
-        coinset: CoinsetClient::new(coinset_url),
+        coinset,
+        resolver,
         session_ttl,
     });
 
     let app = Router::new()
         .route("/nonce", post(handle_nonce))
+        .route("/resolve", post(handle_resolve))
         .route("/session", post(handle_session).get(handle_get_session))
         .route("/logout", post(handle_logout))
         .with_state(state);
@@ -122,6 +144,30 @@ async fn handle_nonce(State(state): State<Arc<AppState>>, headers: HeaderMap) ->
         aud,
     })
     .into_response()
+}
+
+/// Maps the wallet's watch-only account key to its on-chain `{ did, ownerIndex }` via the
+/// `ChainResolver`. The browser no longer reads the chain — this is the relay's job now.
+async fn handle_resolve(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<ResolveBody>,
+) -> impl IntoResponse {
+    let Ok(pk) = account_pk_from_hex(&body.account_pk) else {
+        return error(StatusCode::BAD_REQUEST, "invalid accountPk");
+    };
+    match state.resolver.resolve_owner(&pk).await {
+        Ok((did, owner_index)) => Json(ResolveResponse { did, owner_index }).into_response(),
+        Err(ResolveError::NotFound) => error(
+            StatusCode::NOT_FOUND,
+            "no on-chain DID for this account key",
+        ),
+        Err(ResolveError::Invalid(_)) => error(StatusCode::BAD_REQUEST, "invalid accountPk"),
+        // Coinset detail stays server-side; the client gets a generic upstream error.
+        Err(ResolveError::Upstream(msg)) => {
+            eprintln!("resolve upstream error: {msg}");
+            error(StatusCode::BAD_GATEWAY, "upstream resolution unavailable")
+        }
+    }
 }
 
 async fn handle_session(

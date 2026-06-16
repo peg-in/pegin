@@ -1,6 +1,6 @@
-//! Browser wallet contexts: auth, DID lookup, JWT, key derivation, and signing.
+//! Browser wallet contexts: login signing, JWT, key derivation, and signing.
+//! Chain reads moved to the relay (feat-37): the browser performs no chain I/O.
 pub mod auth;
-pub mod did_lookup;
 pub mod jwt;
 pub mod keys;
 pub mod signing;
