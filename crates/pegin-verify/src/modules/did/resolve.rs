@@ -50,11 +50,11 @@ fn owner_address_hint(owner_pk: &[u8; 48]) -> Result<String, String> {
 
 /// The owner's DID singleton among hinted coins. `coins_by_hints` already excludes
 /// spent coins, so any unspent amount-1 coin is a live singleton candidate.
-fn pick_unspent_did(records: &[CoinRecord]) -> Option<&CoinRecord> {
+pub(super) fn pick_unspent_did(records: &[CoinRecord]) -> Option<&CoinRecord> {
     records.iter().find(|r| !r.spent && r.coin.amount == 1)
 }
 
-fn coin_id_hex(record: &CoinRecord) -> Result<String, String> {
+pub(super) fn coin_id_hex(record: &CoinRecord) -> Result<String, String> {
     let parent = hex32(&record.coin.parent_coin_info)?;
     let puzzle_hash = hex32(&record.coin.puzzle_hash)?;
     let coin = Coin::new(

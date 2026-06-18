@@ -1,79 +1,46 @@
 import type { PeginSession } from '../../entities/session/index.js'
 import { PeginAuthClient } from '../../shared/api/pegin-auth-api.js'
-import { logger } from '../../shared/lib/logger.js'
-
-/** Identity material minted in WASM — secrets never leave the browser. */
-export interface PeginWalletLogin {
-  did: string
-  jwt: string
-  challengeSig?: string
-  walletFp: string
-  ownerIndex: number
-}
-
-/**
- * Minimal WASM surface required for seed login. Resolution reads only public chain
- * data (coinset hints) and caches the result; secrets never cross to the relay.
- */
-export interface PeginWasmLogin {
-  loginWithSeed(
-    mnemonic: string,
-    scan_limit: number,
-    ttl_seconds: number,
-    aud: string,
-    challenge_nonce?: string | null,
-  ): Promise<PeginWalletLogin>
-  /** Caches the relay-confirmed DID so the next login skips the on-chain scan. */
-  rememberDid?(walletFp: string, did: string, ownerIndex: number): void
-}
+import type { PeginSigner } from './signers/pegin-signer.js'
 
 export interface LoginWithPeginOptions {
+  /** How the login is signed (PasskeySigner in production; SeedSigner in tests). */
+  signer: PeginSigner
   /** Same-origin auth API prefix. Default `/api/pegin`. */
   apiPrefix?: string
-  /** JWT lifetime passed to WASM. Default 3600. */
-  jwtTtlSeconds?: number
-  /** Highest address index the first-login DID scan probes. Default 0 → WASM default (10 000). */
-  scanLimit?: number
-  /** Loads the browser WASM module (must alias `@pegin/wasm` in bundler). */
-  loadWasm?: () => Promise<PeginWasmLogin>
 }
 
 const DEFAULT_API_PREFIX = '/api/pegin'
 
 /**
- * Full secure login: server nonce → WASM mint → server verify → HttpOnly session.
- * `aud` comes from the server (derived from request Origin), never hardcoded.
+ * Full secure login: account key → relay resolve → signer proves possession → session.
+ *
+ * The browser never reads the chain: the relay maps the signer's watch-only `accountPk` to
+ * `{ did, ownerIndex }`, the signer mints the JWT for that owner, and the relay re-verifies
+ * on-chain ownership (feat-17). `aud` comes from the server (request Origin), never hardcoded.
  */
-export async function loginWithPegin(
-  mnemonic: string,
-  options: LoginWithPeginOptions = {},
-): Promise<PeginSession> {
+export async function loginWithPegin(options: LoginWithPeginOptions): Promise<PeginSession> {
+  const { signer } = options
   const auth = new PeginAuthClient(options.apiPrefix ?? DEFAULT_API_PREFIX)
-  // Nonce fetch and WASM init are independent; overlap them to save one round-trip.
-  const [{ loginId, nonce, aud }, wasm] = await Promise.all([
+
+  // The account key gates resolution; nonce issuance is independent, so overlap them.
+  const { accountPk } = await signer.identityKey()
+  const [{ loginId, nonce, aud }, resolved] = await Promise.all([
     auth.requestNonce(),
-    (options.loadWasm ?? defaultLoadWasm)(),
+    auth.resolve(accountPk),
   ])
-  const wallet = await wasm.loginWithSeed(
-    mnemonic,
-    options.scanLimit ?? 0,
-    options.jwtTtlSeconds ?? 3600,
+
+  const { jwt, challengeSig } = await signer.signLogin({
+    did: resolved.did,
+    ownerIndex: resolved.ownerIndex,
     aud,
     nonce,
-  )
+  })
   const session = await auth.completeLogin({
     loginId,
-    jwt: wallet.jwt,
-    ...(wallet.challengeSig !== undefined ? { challengeSig: wallet.challengeSig } : {}),
+    jwt,
+    ...(challengeSig !== undefined ? { challengeSig } : {}),
   })
-  // Cache the relay-confirmed DID so the next login skips the on-chain scan. Best-effort:
-  // the user is already authenticated, so a cache failure must not reject the login.
-  try {
-    wasm.rememberDid?.(wallet.walletFp, session.did, wallet.ownerIndex)
-  } catch (err) {
-    logger.warn('rememberDid cache write failed; continuing with the session', err)
-  }
-  return toPeginSession(session, wallet.jwt)
+  return toPeginSession(session, jwt)
 }
 
 /** Restores a server-verified session, or null when logged out / expired. */
@@ -87,15 +54,6 @@ export async function loadPeginSession(
 /** Clears the server HttpOnly session cookie. */
 export async function logoutPegin(apiPrefix = DEFAULT_API_PREFIX): Promise<void> {
   await new PeginAuthClient(apiPrefix).logout()
-}
-
-async function defaultLoadWasm(): Promise<PeginWasmLogin> {
-  const mod = await import('@pegin/wasm')
-  await mod.default()
-  return {
-    loginWithSeed: mod.loginWithSeed.bind(mod),
-    rememberDid: mod.rememberDid.bind(mod),
-  }
 }
 
 // `jwt` is only available on fresh login (minted client-side); session restore

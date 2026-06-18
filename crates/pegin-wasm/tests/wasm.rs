@@ -9,20 +9,12 @@ use wasm_bindgen_test::*;
 wasm_bindgen_test_configure!(run_in_browser);
 
 use pegin_wasm::{
-    derive_keys, derive_wallet_keys, hello, login_with_seed, lookup_did, mint_jwt, remember_did,
-    sign_challenge, verify_jwt,
+    derive_keys, derive_wallet_keys, hello, identity_key, mint_jwt, sign_challenge, sign_login,
+    verify_jwt,
 };
 
 fn js_field(obj: &JsValue, key: &str) -> JsValue {
     Reflect::get(obj, &JsValue::from_str(key)).expect("readable object field")
-}
-
-/// Tests share one browser origin, so the local profile cache persists between
-/// them — reset it before any assertion that depends on a fresh profile.
-fn clear_local_profile() {
-    if let Some(Ok(Some(storage))) = web_sys::window().map(|w| w.local_storage()) {
-        let _ = storage.clear();
-    }
 }
 
 const TEST_DID: &str = "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
@@ -137,72 +129,56 @@ fn wrong_audience_fails_verification_in_browser() {
     assert!(!verify_jwt(&token, "https://other.example", None));
 }
 
-// ── Local DID lookup (cached path — no live chain scan in CI) ──────────────────
-// The first-login coinset scan is covered by native mock tests in `did_lookup::scan`;
-// here we exercise the JS binding + cache so the headless suite stays deterministic.
+// ── Watch-only identity key (relay resolves it — no chain I/O in the browser) ──
 
 #[wasm_bindgen_test]
-async fn lookup_did_returns_cached_identity_in_browser() {
-    clear_local_profile();
+fn identity_key_exposes_account_pk_in_browser() {
     let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
-    remember_did(
-        keys.did_pk_hex(),
-        "did:chia:1cachedbrowser".to_owned(),
-        4757,
-    );
-
-    let identity = lookup_did(&keys, 0).await.expect("cache hit, no scan");
-    assert_eq!(
-        js_field(&identity, "ownerIndex").as_f64(),
-        Some(4757.0),
-        "lookupDid returns the cached owning index"
-    );
-    let owner_pk = js_field(&identity, "ownerPk")
+    let identity = identity_key(&keys);
+    let account_pk = js_field(&identity, "accountPk")
         .as_string()
-        .expect("ownerPk is a string");
-    assert_eq!(owner_pk.len(), 96, "owner pk is a 48-byte BLS key in hex");
+        .expect("accountPk is a string");
     assert_eq!(
-        js_field(&identity, "did").as_string().as_deref(),
-        Some("did:chia:1cachedbrowser"),
-        "lookupDid returns the locally cached DID with no chain read"
+        account_pk.len(),
+        96,
+        "accountPk is a 48-byte BLS key in hex"
     );
+    assert_eq!(account_pk, keys.account_pk_hex());
 }
 
-// ── Local login (cached identity — signs with the owning index) ────────────────
+// ── Login signing (relay-resolved DID + owner index → JWT + challenge sig) ─────
 
 #[wasm_bindgen_test]
-async fn login_with_seed_mints_verifiable_jwt_in_browser() {
-    clear_local_profile();
+fn sign_login_mints_verifiable_jwt_in_browser() {
     let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
-    remember_did(keys.did_pk_hex(), "did:chia:1cachedbrowser".to_owned(), 0);
-
-    let result = login_with_seed(
-        &deterministic_test_phrase(),
+    let result = sign_login(
+        &keys,
+        TEST_DID,
         0,
-        3600,
         TEST_AUD,
+        3600,
         Some("browser-nonce".to_owned()),
     )
-    .await
-    .expect("local login must succeed");
+    .expect("sign_login must succeed");
 
     let jwt = js_field(&result, "jwt")
         .as_string()
         .expect("jwt is a string");
     assert_eq!(jwt.split('.').count(), 3, "JWT must have 3 parts");
     assert!(verify_jwt(&jwt, TEST_AUD, Some("browser-nonce".to_owned())));
-
-    assert_eq!(
-        js_field(&result, "did").as_string().as_deref(),
-        Some("did:chia:1cachedbrowser"),
-        "login carries the cached canonical DID"
-    );
-    let wallet_fp = js_field(&result, "walletFp")
-        .as_string()
-        .expect("walletFp is a string");
-    assert_eq!(wallet_fp.len(), 96, "wallet fingerprint is the DID pk hex");
     assert!(
         js_field(&result, "challengeSig").is_string(),
         "a nonce login carries a challenge signature"
+    );
+}
+
+#[wasm_bindgen_test]
+fn sign_login_without_nonce_omits_challenge_sig_in_browser() {
+    let keys = derive_wallet_keys(&deterministic_test_phrase()).expect("valid mnemonic");
+    let result =
+        sign_login(&keys, TEST_DID, 0, TEST_AUD, 3600, None).expect("sign_login must succeed");
+    assert!(
+        js_field(&result, "challengeSig").is_undefined(),
+        "no nonce ⇒ no challenge signature"
     );
 }

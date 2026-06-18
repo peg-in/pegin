@@ -138,12 +138,29 @@ impl CoinsetClient {
 
     /// Unspent coin records whose creation was hinted with one of `hints_hex` (`0x…`).
     pub async fn coins_by_hints(&self, hints_hex: &[String]) -> Result<Vec<CoinRecord>, String> {
+        self.fetch_hints(hints_hex, false).await
+    }
+
+    /// Coin records for these hints **including spent** — the owner scan's activity probe
+    /// detects whether an address window was ever used, not just whether it holds coins now.
+    pub async fn coins_by_hints_with_spent(
+        &self,
+        hints_hex: &[String],
+    ) -> Result<Vec<CoinRecord>, String> {
+        self.fetch_hints(hints_hex, true).await
+    }
+
+    async fn fetch_hints(
+        &self,
+        hints_hex: &[String],
+        include_spent: bool,
+    ) -> Result<Vec<CoinRecord>, String> {
         let resp: CoinRecordsResponse = self
             .post(
                 "get_coin_records_by_hints",
                 serde_json::json!({
                     "hints": hints_hex,
-                    "include_spent_coins": false,
+                    "include_spent_coins": include_spent,
                 }),
             )
             .await?;

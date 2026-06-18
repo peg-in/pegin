@@ -1,7 +1,10 @@
-// Login page — one primary action, terminal-minimal states.
+// Login page — two views, one at a time. Sign-in (existing passkey) is primary; a link below
+// switches to the create-passkey view (seal a seed under a new passkey) and back.
 
+import { useState } from 'react'
 import { LoginForm } from './LoginForm.js'
 import { LoginResult } from './LoginResult.js'
+import { SeedInputForm } from './SeedInputForm.js'
 import { useLogin } from './useLogin.js'
 import { useWasm } from './useWasm.js'
 
@@ -11,8 +14,9 @@ function truncateDid(did: string): string {
 }
 
 export function LoginPage() {
-  const { state, login, logout } = useLogin()
+  const { state, enroll, login, logout } = useLogin()
   const wasm = useWasm()
+  const [view, setView] = useState<'signin' | 'create'>('signin')
 
   if (state.status === 'success') {
     return (
@@ -50,14 +54,53 @@ export function LoginPage() {
     )
   }
 
+  const loading = state.status === 'loading'
+  const wasmReady = wasm.status === 'ready'
+
+  if (view === 'create') {
+    return (
+      <>
+        <SeedInputForm
+          loading={loading}
+          wasmReady={wasmReady}
+          hint="seal your seed under a new passkey (one time)"
+          action="▶ create passkey from seed"
+          busyLabel="creating passkey"
+          onSubmit={(phrase) => void enroll(phrase)}
+        />
+        <LoginResult state={state} />
+        <p className="tui-secondary">
+          <button
+            type="button"
+            className="tui-link"
+            disabled={loading}
+            onClick={() => {
+              setView('signin')
+            }}
+          >
+            ← back to sign in
+          </button>
+        </p>
+      </>
+    )
+  }
+
   return (
     <>
-      <LoginForm
-        loading={state.status === 'loading'}
-        wasmReady={wasm.status === 'ready'}
-        onSubmit={(phrase) => void login(phrase)}
-      />
+      <LoginForm loading={loading} wasmReady={wasmReady} onAuthenticate={() => void login()} />
       <LoginResult state={state} />
+      <p className="tui-secondary">
+        <button
+          type="button"
+          className="tui-link"
+          disabled={loading}
+          onClick={() => {
+            setView('create')
+          }}
+        >
+          Create a passkey
+        </button>
+      </p>
     </>
   )
 }

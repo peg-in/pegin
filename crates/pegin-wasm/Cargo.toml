@@ -13,8 +13,6 @@ crate-type = ["cdylib", "rlib"]
 pegin-jwt            = { workspace = true }
 chia-bls             = { workspace = true }
 chia-protocol        = { workspace = true }
-chia-puzzles         = { workspace = true }
-chia-puzzle-types    = { workspace = true }
 chia-traits          = { workspace = true }
 wasm-bindgen         = { workspace = true }
 wasm-bindgen-futures = { workspace = true }
@@ -36,12 +34,7 @@ bip39             = { workspace = true }
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
 tokio = { workspace = true, features = ["rt", "macros"] }
 
-# Browser-only deps: public coinset reads (gloo-net), scan timeout (gloo-timers),
-# local profile cache (web-sys localStorage), and wasm RNG. The mini wallet reads
-# public chain data directly; only public puzzle hashes leave the browser — never keys.
+# Browser-only deps: wasm RNG. The mini wallet performs no chain I/O (feat-37); the relay
+# resolves DIDs, so the coinset/localStorage/timer stack was removed.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-gloo-net     = { workspace = true }
-gloo-timers  = { workspace = true }
-futures-util = { workspace = true }
-web-sys      = { workspace = true, features = ["Window", "Storage"] }
 getrandom    = { version = "0.2", features = ["js"] }

@@ -1,102 +1,72 @@
-//! Seed-phrase login — derive keys, resolve identity (cache or public scan), mint a JWT.
-//!
-//! Secrets stay in WASM; only the minted JWT, its signature, and public keys are returned.
+//! Login signing — derive the owner key at the relay-resolved index, mint a JWT, sign the
+//! challenge. Secrets stay in WASM; only the JWT, its signature, and public keys leave.
 
-use crate::modules::did_lookup::helper::wallet_fingerprint;
-use crate::modules::did_lookup::service::{login_subject, lookup_did_inner};
 use crate::modules::jwt::service::mint_jwt_with_sk;
-use crate::modules::keys::service::derive_wallet_keys_inner;
+use crate::modules::keys::WalletKeys;
 use crate::modules::signing::service::sign_challenge_with_sk;
 
-/// Login material minted in-WASM. Secret keys never cross to JS.
+/// Signed login material minted in-WASM. Secret keys never cross to JS.
 #[derive(Debug)]
-pub struct LoginSession {
-    /// Canonical `did:chia` once resolved (cache or first-login scan), else empty.
-    pub did: String,
+pub struct SignedLogin {
     pub jwt: String,
     pub challenge_sig: Option<String>,
-    /// Cache key for [`crate::modules::did_lookup`] — lets the SDK address the profile.
-    pub wallet_fp: String,
-    /// Address key the JWT is signed with (`cnf.did_pk` owner).
-    pub owner_index: u32,
 }
 
-/// Derives keys, resolves identity, and mints a JWT signed by the owner key.
+/// Mints a JWT signed by the owner key at `owner_index` and signs the login challenge.
 ///
-/// The JWT's `cnf.did_pk` carries the owner public key; the auth relay independently
-/// re-verifies on-chain ownership (feat-17). Identity resolution reads only public chain
-/// data — no secret ever leaves the browser.
+/// The relay already resolved `(did, owner_index)` from the watch-only account key, so the
+/// JWT's `iss`/`sub` is the canonical DID and `cnf.did_pk` is the owner key the relay
+/// re-verifies on-chain (feat-17). No chain I/O happens here.
 ///
-/// * `scan_limit` — highest address index probed on a first-login DID scan
-pub async fn login_with_seed_inner(
-    mnemonic: &str,
-    scan_limit: u32,
-    ttl_seconds: u32,
+/// * `owner_index` — DID-owning address index returned by `/resolve`
+/// * `challenge_nonce` — when set, the owner key signs it and the sig is returned
+pub fn sign_login_inner(
+    keys: &WalletKeys,
+    did: &str,
+    owner_index: u32,
     aud: &str,
+    ttl_seconds: u32,
     challenge_nonce: Option<&str>,
-) -> Result<LoginSession, String> {
-    let keys = derive_wallet_keys_inner(mnemonic)?;
-    let identity = lookup_did_inner(&keys, scan_limit).await?;
-
-    let owner_sk = keys.owner_secret_at(identity.owner_index);
-    let subject = login_subject(&identity);
+) -> Result<SignedLogin, String> {
+    let owner_sk = keys.owner_secret_at(owner_index);
     let challenge_sig = challenge_nonce.map(|nonce| sign_challenge_with_sk(&owner_sk, nonce));
-    let jwt = mint_jwt_with_sk(&owner_sk, &subject, aud, ttl_seconds, challenge_nonce)?;
-
-    Ok(LoginSession {
-        did: identity.did.unwrap_or_default(),
-        jwt,
-        challenge_sig,
-        wallet_fp: wallet_fingerprint(&keys),
-        owner_index: identity.owner_index,
-    })
+    let jwt = mint_jwt_with_sk(&owner_sk, did, aud, ttl_seconds, challenge_nonce)?;
+    Ok(SignedLogin { jwt, challenge_sig })
 }
 
-// Native-only: these drive the async login through `#[tokio::test]`; tokio is a
-// native dev-dependency (it does not build for wasm32).
-#[cfg(all(test, not(target_arch = "wasm32")))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::modules::jwt::service::verify_jwt_inner;
+    use crate::modules::keys::service::derive_wallet_keys_inner;
     use crate::test_util::deterministic_test_phrase;
 
     const AUD: &str = "https://app.example";
+    const DID: &str = "did:chia:deadbeef01020304050607080900aabbccddeeff01020304050607080900aabb";
 
-    // Native has no browser fetch, so the scan is a no-op: identity falls back to the
-    // default owner key with no DID — exactly the first-login, pre-scan shape.
-    #[tokio::test]
-    async fn mints_verifiable_jwt_without_network() {
-        let session = login_with_seed_inner(
-            &deterministic_test_phrase(),
-            10_000,
-            3600,
-            AUD,
-            Some("nonce-1"),
-        )
-        .await
-        .unwrap();
+    #[test]
+    fn mints_verifiable_jwt_for_resolved_did() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        let signed = sign_login_inner(&keys, DID, 0, AUD, 3600, Some("nonce-1")).unwrap();
 
-        assert!(verify_jwt_inner(&session.jwt, AUD, Some("nonce-1")).unwrap());
-        assert!(session.challenge_sig.is_some());
-        assert!(session.did.is_empty());
-        assert_eq!(session.owner_index, 0);
-        assert_eq!(session.wallet_fp.len(), 96);
+        assert!(verify_jwt_inner(&signed.jwt, AUD, Some("nonce-1")).unwrap());
+        assert!(signed.challenge_sig.is_some());
     }
 
-    #[tokio::test]
-    async fn omits_challenge_sig_without_nonce() {
-        let session = login_with_seed_inner(&deterministic_test_phrase(), 10_000, 3600, AUD, None)
-            .await
-            .unwrap();
-        assert!(session.challenge_sig.is_none());
-        assert!(verify_jwt_inner(&session.jwt, AUD, None).unwrap());
+    #[test]
+    fn omits_challenge_sig_without_nonce() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        let signed = sign_login_inner(&keys, DID, 0, AUD, 3600, None).unwrap();
+
+        assert!(signed.challenge_sig.is_none());
+        assert!(verify_jwt_inner(&signed.jwt, AUD, None).unwrap());
     }
 
-    #[tokio::test]
-    async fn rejects_invalid_mnemonic() {
-        let err = login_with_seed_inner("not a valid mnemonic", 10_000, 3600, AUD, None)
-            .await
-            .unwrap_err();
-        assert_eq!(err, "invalid mnemonic");
+    #[test]
+    fn different_owner_indexes_sign_with_different_keys() {
+        let keys = derive_wallet_keys_inner(&deterministic_test_phrase()).unwrap();
+        let a = sign_login_inner(&keys, DID, 0, AUD, 3600, Some("n")).unwrap();
+        let b = sign_login_inner(&keys, DID, 7, AUD, 3600, Some("n")).unwrap();
+        assert_ne!(a.challenge_sig, b.challenge_sig);
     }
 }

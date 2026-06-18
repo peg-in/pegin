@@ -11,6 +11,12 @@ export interface PeginNoncePayload {
   aud: string
 }
 
+/** Relay resolution of a watch-only account key to its on-chain DID + owning index. */
+export interface PeginResolvedOwner {
+  did: string
+  ownerIndex: number
+}
+
 /** Abort a stalled auth request rather than hang the login flow. */
 const REQUEST_TIMEOUT_MS = 15_000
 
@@ -33,6 +39,19 @@ export class PeginAuthClient {
       throw new Error(await readError(res, 'failed to start login'))
     }
     return res.json() as Promise<PeginNoncePayload>
+  }
+
+  /** Maps the wallet's watch-only `accountPk` to its on-chain `{ did, ownerIndex }`. */
+  async resolve(accountPk: string): Promise<PeginResolvedOwner> {
+    const res = await this.request('/resolve', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ accountPk }),
+    })
+    if (!res.ok) {
+      throw new Error(await readError(res, 'could not resolve account'))
+    }
+    return res.json() as Promise<PeginResolvedOwner>
   }
 
   async completeLogin(body: {

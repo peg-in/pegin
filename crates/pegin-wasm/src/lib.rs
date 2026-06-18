@@ -1,5 +1,8 @@
-//! pegin-wasm — browser mini wallet (BIP39 → BLS keys, DID lookup, JWT mint).
+//! pegin-wasm — browser mini wallet (BIP39 → BLS keys, login signing, JWT mint).
 //! `#[wasm_bindgen]` surface only; logic lives in `modules/`.
+//!
+//! The browser performs **no chain I/O** (feat-37): it exposes the watch-only account key
+//! the relay resolves, and signs logins for the DID + owner index the relay returns.
 
 mod modules;
 
@@ -56,56 +59,65 @@ pub fn sign_spend_bundle(keys: &WalletKeys, bundle: &[u8]) -> Result<Vec<u8>, Js
     modules::signing::service::sign_spend_bundle_inner(keys, bundle).map_err(|e| JsError::new(&e))
 }
 
-/// Resolves login identity for derived wallet keys — secrets never leave WASM.
+/// Watch-only identity the relay resolves to `{ did, ownerIndex }` — no secret leaves WASM.
 ///
-/// Cache hit returns instantly; a first-login cache miss scans **public** coinset
-/// hints for the address index that owns the DID, then caches it.
+/// The browser performs **no chain I/O**; `POST /resolve { accountPk }` maps this key to
+/// the wallet's DID on the relay.
 ///
 /// * `keys` — BLS keys from [`deriveWalletKeys`](crate::derive_wallet_keys)
-/// * `scan_limit` — highest address index probed (`0` ⇒ default 10 000)
-/// * returns `{ ownerIndex, ownerPk, did? }`; `did` is set once resolved on-chain
-#[wasm_bindgen(js_name = lookupDid)]
-pub async fn lookup_did(keys: &WalletKeys, scan_limit: u32) -> Result<JsValue, JsError> {
-    modules::did_lookup::service::lookup_did_inner(keys, scan_limit_or_default(scan_limit))
-        .await
-        .map(|identity| identity_to_js(&identity))
-        .map_err(|e| JsError::new(&e))
+/// * returns `{ accountPk }` — the observer account public key (48-byte BLS hex)
+#[wasm_bindgen(js_name = identityKey)]
+pub fn identity_key(keys: &WalletKeys) -> JsValue {
+    let obj = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("accountPk"),
+        &JsValue::from_str(&keys.account_pk_hex()),
+    );
+    obj.into()
 }
 
-fn scan_limit_or_default(scan_limit: u32) -> u32 {
-    if scan_limit == 0 {
-        modules::did_lookup::DEFAULT_SCAN_LIMIT
-    } else {
-        scan_limit
-    }
-}
-
-/// Caches the relay-resolved canonical DID so the next `lookupDid` returns it.
+/// Proves possession for a relay-resolved DID: mints a JWT and signs the login challenge.
 ///
-/// * `wallet_fp` — fingerprint from a prior [`loginWithSeed`] result
-/// * `did` — canonical `did:chia` the auth relay resolved from `cnf.did_pk`
-/// * `owner_index` — address key the relay confirmed as the DID owner
-#[wasm_bindgen(js_name = rememberDid)]
-// wasm-bindgen marshals JS strings as owned `String`, not `&str`.
+/// The relay returned `(did, ownerIndex)` from [`identityKey`]; this signs with the owner
+/// key at that index so `cnf.did_pk` binds to the on-chain owner (feat-17). No chain I/O.
+///
+/// * `did` — canonical `did:chia` from `/resolve` (fills `iss`/`sub`)
+/// * `owner_index` — DID-owning address index from `/resolve`
+/// * `aud` — relying-party origin bound into the JWT
+/// * `ttl_seconds` — JWT lifetime
+/// * `nonce` — server challenge; when set, the result carries `challengeSig`
+/// * returns `{ jwt, challengeSig? }` — no secret key exposed
+#[wasm_bindgen(js_name = signLogin)]
+// wasm-bindgen marshals JS `string | null` as an owned `Option<String>`, not `Option<&str>`.
 #[allow(clippy::needless_pass_by_value)]
-pub fn remember_did(wallet_fp: String, did: String, owner_index: u32) {
-    modules::did_lookup::service::remember_did_inner(&wallet_fp, &did, owner_index);
-}
+pub fn sign_login(
+    keys: &WalletKeys,
+    did: &str,
+    owner_index: u32,
+    aud: &str,
+    ttl_seconds: u32,
+    nonce: Option<String>,
+) -> Result<JsValue, JsError> {
+    let signed = modules::auth::service::sign_login_inner(
+        keys,
+        did,
+        owner_index,
+        aud,
+        ttl_seconds,
+        nonce.as_deref(),
+    )
+    .map_err(|e| JsError::new(&e))?;
 
-fn identity_to_js(identity: &modules::did_lookup::ResolvedIdentity) -> JsValue {
     let obj = js_sys::Object::new();
     let set = |k: &str, v: &JsValue| {
         let _ = js_sys::Reflect::set(&obj, &JsValue::from_str(k), v);
     };
-    set(
-        "ownerIndex",
-        &JsValue::from_f64(f64::from(identity.owner_index)),
-    );
-    set("ownerPk", &JsValue::from_str(&identity.owner_pk));
-    if let Some(did) = &identity.did {
-        set("did", &JsValue::from_str(did));
+    set("jwt", &JsValue::from_str(&signed.jwt));
+    if let Some(sig) = signed.challenge_sig {
+        set("challengeSig", &JsValue::from_str(&sig));
     }
-    obj.into()
+    Ok(obj.into())
 }
 
 /// Mints a self-signed ES256K JWT with the DID key, bound to `aud`.
@@ -140,54 +152,3 @@ pub fn verify_jwt(token: &str, expected_aud: &str, expected_nonce: Option<String
     modules::jwt::service::verify_jwt_inner(token, expected_aud, expected_nonce.as_deref())
         .unwrap_or(false)
 }
-
-/// Resolves identity and mints a JWT inside WASM — secrets never leave the browser.
-///
-/// * `mnemonic` — BIP39 seed phrase (never stored; callers should clear UI state immediately)
-/// * `scan_limit` — highest address index probed on a first-login DID scan (`0` ⇒ default)
-/// * `ttl_seconds` — JWT lifetime
-/// * `aud` — relying-party origin bound into the JWT
-/// * `challenge_nonce` — when set, signs the nonce with the owner key and embeds it in the JWT
-/// * returns `{ did, jwt, challengeSig?, walletFp, ownerIndex }` — no secret keys exposed.
-#[wasm_bindgen(js_name = loginWithSeed)]
-// wasm-bindgen marshals JS `string | null` as an owned `Option<String>`, not `Option<&str>`.
-#[allow(clippy::needless_pass_by_value)]
-pub async fn login_with_seed(
-    mnemonic: &str,
-    scan_limit: u32,
-    ttl_seconds: u32,
-    aud: &str,
-    challenge_nonce: Option<String>,
-) -> Result<JsValue, JsError> {
-    modules::auth::service::login_with_seed_inner(
-        mnemonic,
-        scan_limit_or_default(scan_limit),
-        ttl_seconds,
-        aud,
-        challenge_nonce.as_deref(),
-    )
-    .await
-    .map(login_session_to_js)
-    .map_err(|e| JsError::new(&e))
-}
-
-fn login_session_to_js(session: modules::auth::service::LoginSession) -> JsValue {
-    let obj = js_sys::Object::new();
-    let set = |k: &str, v: &JsValue| {
-        let _ = js_sys::Reflect::set(&obj, &JsValue::from_str(k), v);
-    };
-    set("did", &JsValue::from_str(&session.did));
-    set("jwt", &JsValue::from_str(&session.jwt));
-    set("walletFp", &JsValue::from_str(&session.wallet_fp));
-    set(
-        "ownerIndex",
-        &JsValue::from_f64(f64::from(session.owner_index)),
-    );
-    if let Some(sig) = session.challenge_sig {
-        set("challengeSig", &JsValue::from_str(&sig));
-    }
-    obj.into()
-}
-
-// Phase 2/3 hooks (next epics): deriveKeysFromPasskeyAssertion(assertion, credentialId),
-// signWithExternalSigner(request) — see the feat-9 issue for signatures.
