@@ -65,6 +65,7 @@ rand              = "0.8"
 hkdf              = "0.12"
 k256              = { version = "0.13", features = ["ecdsa"] }
 getrandom         = "0.2"
+argon2            = "0.5"
 
 # ── Async runtime ─────────────────────────────────────────────────────────────
 tokio = { version = "1.40", features = ["full"] }

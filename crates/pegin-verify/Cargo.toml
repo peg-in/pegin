@@ -20,6 +20,7 @@ chia-wallet-sdk = { workspace = true }
 tokio      = { workspace = true }
 axum       = { workspace = true }
 getrandom  = { workspace = true }
+urlencoding = "2"
 
 # Pinned to the 0.20 chia-puzzle-types line that chia-wallet-sdk 0.23 bundles so
 # Coin/PublicKey/TreeHash types agree across `Did::parse_child`. This deliberately

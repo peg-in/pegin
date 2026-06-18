@@ -1,0 +1,39 @@
+[package]
+name = "pegin-signer"
+version = "0.1.0"
+edition = "2021"
+description = "PEGIN Signer — seal a seed under a local password or 1Password"
+
+[workspace]
+
+[lib]
+name = "pegin_signer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-deep-link = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+urlencoding = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+pegin-infrastructure = { path = "../../../crates/pegin-infrastructure" }
+arboard = "3"
+open = "5"
+keyring = "3"
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "sync", "time"] }
+tower-http = { version = "0.6", features = ["cors"] }
+base64 = "0.22"
+uuid = { version = "1", features = ["v4"] }
+zeroize = "1"
+hex = "0.4"
+rand = "0.8"
+reqwest = { version = "0.12", features = ["json"] }
+chia-bls = "0.25"
+chia-protocol = { version = "0.25", features = ["serde"] }
+chia-traits = "0.25"
+bip39 = "2.0"

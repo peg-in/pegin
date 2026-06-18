@@ -9,6 +9,9 @@ import { peginAuthPlugin } from './plugins/pegin-auth-plugin.mjs'
 
 const AUTH_PORT = process.env.PEGIN_AUTH_PORT ?? '8787'
 
+// Production login is passkey-only; `PEGIN_LOGIN_MODE=demo` exposes the seed-enrollment screen.
+const LOGIN_MODE = process.env.PEGIN_LOGIN_MODE ?? ''
+
 // Forward /api/pegin/* to the Rust auth sidecar (prefix stripped to match its routes).
 const authProxy = {
   '/api/pegin': {
@@ -20,7 +23,9 @@ const authProxy = {
 
 export default defineConfig({
   plugins: [react(), wasm(), topLevelAwait(), peginAuthPlugin()],
-  server: { proxy: authProxy },
+  // Expose the login mode to client code (Vite only forwards VITE_*-prefixed vars by default).
+  define: { 'import.meta.env.PEGIN_LOGIN_MODE': JSON.stringify(LOGIN_MODE) },
+  server: { host: 'localhost', proxy: authProxy },
   preview: { proxy: authProxy },
   resolve: {
     alias: {

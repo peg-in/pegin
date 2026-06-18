@@ -2,9 +2,11 @@
 // switches to the create-passkey view (seal a seed under a new passkey) and back.
 
 import { useState } from 'react'
+import { seedEnrollEnabled } from '../../shared/lib/index.js'
 import { LoginForm } from './LoginForm.js'
 import { LoginResult } from './LoginResult.js'
 import { SeedInputForm } from './SeedInputForm.js'
+import { SignerRequestPanel } from './SignerRequestPanel.js'
 import { useLogin } from './useLogin.js'
 import { useWasm } from './useWasm.js'
 
@@ -34,6 +36,7 @@ export function LoginPage() {
         >
           ■ disconnect
         </button>
+        <SignerRequestPanel />
       </>
     )
   }
@@ -57,7 +60,8 @@ export function LoginPage() {
   const loading = state.status === 'loading'
   const wasmReady = wasm.status === 'ready'
 
-  if (view === 'create') {
+  // Production login is passkey-only — the seed-enrollment view exists only in demo mode.
+  if (seedEnrollEnabled && view === 'create') {
     return (
       <>
         <SeedInputForm
@@ -89,18 +93,22 @@ export function LoginPage() {
     <>
       <LoginForm loading={loading} wasmReady={wasmReady} onAuthenticate={() => void login()} />
       <LoginResult state={state} />
-      <p className="tui-secondary">
-        <button
-          type="button"
-          className="tui-link"
-          disabled={loading}
-          onClick={() => {
-            setView('create')
-          }}
-        >
-          Create a passkey
-        </button>
-      </p>
+      {seedEnrollEnabled ? (
+        <p className="tui-secondary">
+          <button
+            type="button"
+            className="tui-link"
+            disabled={loading}
+            onClick={() => {
+              setView('create')
+            }}
+          >
+            Create a passkey
+          </button>
+        </p>
+      ) : (
+        <p className="tui-secondary tui-line-dim">No passkey yet? Set one up in the PEGIN app.</p>
+      )}
     </>
   )
 }

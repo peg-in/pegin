@@ -48,6 +48,27 @@ export function localStorageVault(key = DEFAULT_KEY): PasskeyVaultStore {
   }
 }
 
+/** True once a seed has been sealed under a passkey on this device (a vault blob exists). */
+export function isPasskeyEnrolled(vault: PasskeyVaultStore = localStorageVault()): boolean {
+  return vault.load() !== null
+}
+
+/** Loads PRF-encrypted seed ciphertext synced from PEGIN Signer via the auth relay. */
+export async function fetchPasskeyBlobFromRelay(
+  credentialId: string,
+  apiPrefix = '/api/pegin',
+): Promise<VaultBlob | null> {
+  const res = await fetch(
+    `${apiPrefix}/passkey-blob?credentialId=${encodeURIComponent(credentialId)}`,
+    { credentials: 'include', signal: AbortSignal.timeout(15_000) },
+  )
+  if (res.status === 404) return null
+  if (!res.ok) {
+    throw new Error(`passkey blob fetch failed (${res.status})`)
+  }
+  return res.json() as Promise<VaultBlob>
+}
+
 /** Encrypts `mnemonic` under the PRF secret. */
 export async function encryptSeed(prfSecret: Uint8Array, mnemonic: string): Promise<VaultBlob> {
   const key = await importAesKey(prfSecret)
@@ -59,12 +80,18 @@ export async function encryptSeed(prfSecret: Uint8Array, mnemonic: string): Prom
 /** Recovers the mnemonic from `blob` using the PRF secret. Throws on a wrong secret. */
 export async function decryptSeed(prfSecret: Uint8Array, blob: VaultBlob): Promise<string> {
   const key = await importAesKey(prfSecret)
-  const pt = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: fromBase64(blob.iv) },
-    key,
-    fromBase64(blob.ct),
-  )
-  return new TextDecoder().decode(pt)
+  try {
+    const pt = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: fromBase64(blob.iv) },
+      key,
+      fromBase64(blob.ct),
+    )
+    return new TextDecoder().decode(pt)
+  } catch {
+    throw new Error(
+      'passkey decrypt failed — pick the passkey registered in PEGIN Signer (localhost) and re-sync if needed',
+    )
+  }
 }
 
 // The PRF secret is already a KDF output, so use its first 32 bytes directly as the AES key.

@@ -110,3 +110,6 @@ temp/
 *.bak
 *.tmp
 *~
+
+# Relay runtime data (passkey blobs, sign requests)
+.pegin-auth-data/

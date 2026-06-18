@@ -14,10 +14,12 @@
  */
 
 import { randomBytes } from '../../../shared/lib/random.js'
+import { normalizeWebAuthnRpId } from '../../../shared/lib/rpid.js'
 import type { IdentityKey, PeginSigner, SignLoginRequest, SignedLogin } from './pegin-signer.js'
 import {
   decryptSeed,
   encryptSeed,
+  fetchPasskeyBlobFromRelay,
   localStorageVault,
   type PasskeyVaultStore,
 } from './passkey-vault.js'
@@ -61,6 +63,8 @@ export interface PasskeySignerOptions {
   loadWasm?: () => Promise<PasskeyWasm>
   /** WebAuthn API; defaults to `navigator.credentials`. */
   webauthn?: WebAuthnApi
+  /** Same-origin auth API for relay passkey blob sync. Default `/api/pegin`. */
+  authApiPrefix?: string
 }
 
 export interface EnrollPasskeyOptions extends PasskeySignerOptions {
@@ -104,14 +108,38 @@ export class PasskeySigner implements PeginSigner {
   private unlock(): Promise<{ wasm: PasskeyWasm; keys: WasmWalletKeys }> {
     this.keysPromise ??= (async () => {
       const vault = this.options.vault ?? localStorageVault()
-      const blob = vault.load()
-      if (!blob) {
-        throw new Error('no enrolled passkey on this device — enroll first')
-      }
       const webauthn = this.options.webauthn ?? navigatorCredentials()
-      const secret = await evaluatePrf(webauthn, this.options.rpId, this.salt())
-      const mnemonic = await decryptSeed(secret, blob)
+      const salt = this.salt()
+      const localBlob = vault.load()
       const wasm = await loadWasmModule(this.options.loadWasm)
+
+      // One assertion gives both the PRF secret and the credential id, so we can try the local
+      // blob first and the relay blob (synced from PEGIN Signer) for the same passkey.
+      const { secret, credentialId } = await evaluatePrfWithCredential(webauthn, this.rpId(), salt)
+
+      // A local blob is preferred, but a stale one (e.g. from earlier testing) must not block a
+      // passkey seeded in PEGIN Signer — if it doesn't decrypt, fall back to the relay.
+      if (localBlob) {
+        try {
+          const mnemonic = await decryptSeed(secret, localBlob)
+          return { wasm, keys: wasm.deriveWalletKeys(mnemonic) }
+        } catch {
+          // wrong passkey for the local blob — try the relay below
+        }
+      }
+
+      const relayBlob = await fetchPasskeyBlobFromRelay(
+        credentialId,
+        this.options.authApiPrefix ?? '/api/pegin',
+      )
+      if (!relayBlob) {
+        throw new Error(
+          localBlob
+            ? 'passkey decrypt failed — this passkey does not match the seed sealed on this browser'
+            : 'no passkey vault on this browser — register in PEGIN Signer while the auth relay is running, then try again',
+        )
+      }
+      const mnemonic = await decryptSeed(secret, relayBlob)
       return { wasm, keys: wasm.deriveWalletKeys(mnemonic) }
     })()
     return this.keysPromise
@@ -119,6 +147,10 @@ export class PasskeySigner implements PeginSigner {
 
   private salt(): Uint8Array {
     return this.options.prfSalt ?? DEFAULT_PRF_SALT
+  }
+
+  private rpId(): string {
+    return normalizeWebAuthnRpId(this.options.rpId)
   }
 }
 
@@ -134,7 +166,7 @@ export async function enrollPasskey(options: EnrollPasskeyOptions): Promise<void
   const credential = await webauthn.create({
     publicKey: {
       challenge: randomBytes(32),
-      rp: { id: options.rpId, name: options.rpName ?? 'PEGIN' },
+      rp: { id: normalizeWebAuthnRpId(options.rpId), name: options.rpName ?? 'PEGIN' },
       user: { id: randomBytes(16), name: options.userName, displayName: options.userName },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 },
@@ -157,10 +189,15 @@ export async function enrollPasskey(options: EnrollPasskeyOptions): Promise<void
     )
   }
 
-  // Prefer the create-time PRF secret; fall back to an assertion when it is not returned there.
-  const secret = created?.results?.first
-    ? toSecret(created.results.first)
-    : await evaluatePrf(webauthn, options.rpId, salt, (credential as PublicKeyCredential).rawId)
+  // Always derive the PRF secret from an assertion, never the create-time result: create-time PRF
+  // can differ from get-time on some authenticators, which would make the blob undecryptable at
+  // login (login uses get-time PRF). The create-time `enabled` check above is only a capability gate.
+  const secret = await evaluatePrf(
+    webauthn,
+    normalizeWebAuthnRpId(options.rpId),
+    salt,
+    (credential as PublicKeyCredential).rawId,
+  )
   const blob = await encryptSeed(secret, options.mnemonic)
   ;(options.vault ?? localStorageVault()).save(blob)
 }
@@ -185,6 +222,34 @@ async function evaluatePrf(
     },
   })
   return readPrfSecret(assertion)
+}
+
+async function evaluatePrfWithCredential(
+  webauthn: WebAuthnApi,
+  rpId: string,
+  salt: Uint8Array,
+): Promise<{ secret: Uint8Array; credentialId: string }> {
+  const assertion = await webauthn.get({
+    publicKey: {
+      challenge: randomBytes(32),
+      rpId,
+      userVerification: 'preferred',
+      extensions: { prf: { eval: { first: salt } } } as AuthenticationExtensionsClientInputs,
+    },
+  })
+  if (!assertion) {
+    throw new Error('passkey assertion was cancelled')
+  }
+  const secret = readPrfSecret(assertion)
+  const raw = (assertion as PublicKeyCredential).rawId
+  return { secret, credentialId: credentialIdToBase64(raw) }
+}
+
+function credentialIdToBase64(rawId: ArrayBuffer): string {
+  const bytes = new Uint8Array(rawId)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
 }
 
 function navigatorCredentials(): WebAuthnApi {

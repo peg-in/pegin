@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   enrollPasskey,
   PasskeySigner,
@@ -93,13 +93,17 @@ describe('PasskeySigner (PRF-wraps-seed)', () => {
   })
 
   it('refuses to log in before enrollment', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(null, { status: 404 }),
+    )
     const signer = new PasskeySigner({
       rpId: 'app.example',
       webauthn: fakeWebauthn(),
       vault: memoryVault(),
       loadWasm: async () => stubWasm({ mnemonics: [] }),
     })
-    await expect(signer.identityKey()).rejects.toThrow(/enroll first/)
+    await expect(signer.identityKey()).rejects.toThrow(/passkey vault on this browser/)
+    fetchSpy.mockRestore()
   })
 
   it('fails to unlock when a different passkey yields the wrong PRF secret', async () => {
@@ -133,5 +137,15 @@ describe('PasskeySigner (PRF-wraps-seed)', () => {
       loadWasm: async () => stubWasm({ mnemonics: [] }),
     })
     await expect(signer.identityKey()).rejects.toThrow(/PRF secret/)
+  })
+})
+
+describe('isPasskeyEnrolled', () => {
+  it('reports false before enrollment and true once a vault blob exists', async () => {
+    const { isPasskeyEnrolled } = await import('../src/features/login/signers/passkey-vault.js')
+    const vault = memoryVault()
+    expect(isPasskeyEnrolled(vault)).toBe(false)
+    vault.save({ iv: 'AAAA', ct: 'AAAA' })
+    expect(isPasskeyEnrolled(vault)).toBe(true)
   })
 })

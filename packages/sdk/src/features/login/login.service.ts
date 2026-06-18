@@ -1,10 +1,16 @@
 import type { PeginSession } from '../../entities/session/index.js'
 import { PeginAuthClient } from '../../shared/api/pegin-auth-api.js'
 import type { PeginSigner } from './signers/pegin-signer.js'
+import { PasskeySigner, type PasskeySignerOptions } from './signers/passkey-signer.js'
 
 export interface LoginWithPeginOptions {
   /** How the login is signed (PasskeySigner in production; SeedSigner in tests). */
   signer: PeginSigner
+  /** Same-origin auth API prefix. Default `/api/pegin`. */
+  apiPrefix?: string
+}
+
+export interface LoginWithPasskeyOptions extends PasskeySignerOptions {
   /** Same-origin auth API prefix. Default `/api/pegin`. */
   apiPrefix?: string
 }
@@ -41,6 +47,28 @@ export async function loginWithPegin(options: LoginWithPeginOptions): Promise<Pe
     ...(challengeSig !== undefined ? { challengeSig } : {}),
   })
   return toPeginSession(session, jwt)
+}
+
+/**
+ * Passkey login in one call: build a `PasskeySigner`, run the secure login, and dispose the
+ * key handle whether it succeeds or throws. The default production path — no seed is typed,
+ * one biometric prompt unlocks the wallet, and a verified server session comes back.
+ */
+export async function loginWithPasskey(options: LoginWithPasskeyOptions): Promise<PeginSession> {
+  const { apiPrefix, ...signerOptions } = options
+  const signer = new PasskeySigner({
+    ...signerOptions,
+    ...(apiPrefix !== undefined ? { authApiPrefix: apiPrefix } : {}),
+  })
+  try {
+    return await loginWithPegin({
+      signer,
+      ...(apiPrefix !== undefined ? { apiPrefix } : {}),
+    })
+  } finally {
+    // Zeroize the in-memory wallet keys regardless of outcome.
+    await signer.dispose().catch(() => undefined)
+  }
 }
 
 /** Restores a server-verified session, or null when logged out / expired. */

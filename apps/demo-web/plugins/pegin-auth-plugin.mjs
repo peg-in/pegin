@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..')
 const BIN = join(ROOT, 'target/debug/pegin-auth-server')
 const PORT = process.env.PEGIN_AUTH_PORT ?? '8787'
+const AUTH_DATA = join(ROOT, '.pegin-auth-data')
 
 /** @returns {import('vite').Plugin} */
 export function peginAuthPlugin() {
@@ -29,6 +30,7 @@ export function peginAuthPlugin() {
       env: {
         ...process.env,
         PEGIN_AUTH_PORT: PORT,
+        PEGIN_AUTH_DATA: AUTH_DATA,
         PEGIN_COINSET_URL: process.env.PEGIN_COINSET_URL ?? 'https://testnet11.api.coinset.org',
       },
       stdio: 'inherit',

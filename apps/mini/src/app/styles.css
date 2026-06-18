@@ -1,0 +1,598 @@
+/* PEGIN Signer — ratatui / Omarchy terminal aesthetic, matched to the web demo. */
+
+:root {
+  color-scheme: dark;
+  --bg: #0b0c16;
+  --bg-panel: #0f1020;
+  --border: #3e4058;
+  --border-bright: #6a6e95;
+  --text: #ddf7ff;
+  --text-dim: #85e1fb;
+  --text-muted: #6a6e95;
+  --accent: #50f872;
+  --accent-dim: #4fe88f;
+  --accent-contrast: #0b0c16;
+  --error: #f85525;
+  --title-bg: #3e4058;
+  --title-fg: #ddf7ff;
+  --scanline: rgba(0, 0, 0, 0.12);
+  --glow: 0 0 18px rgba(80, 248, 114, 0.22);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #05182e;
+  --bg-panel: #00172e;
+  --border: #134e5a;
+  --border-bright: #3f8f8a;
+  --text: #f6dcac;
+  --text-dim: #faa968;
+  --text-muted: #8cbfb8;
+  --accent: #028391;
+  --accent-dim: #3f8f8a;
+  --accent-contrast: #f6dcac;
+  --error: #f85525;
+  --title-bg: #134e5a;
+  --title-fg: #f6dcac;
+  --scanline: rgba(0, 0, 0, 0.04);
+  --glow: 0 0 14px rgba(2, 131, 145, 0.18);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'JetBrains Mono', 'CaskaydiaMono Nerd Font', ui-monospace, SFMono-Regular, Menlo,
+    Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.45;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body::after {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    var(--scanline) 2px,
+    var(--scanline) 4px
+  );
+  z-index: 9999;
+}
+
+.tui-root {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 20px 14px;
+}
+
+.tui-screen {
+  width: min(100%, 460px);
+  border: 2px solid var(--border-bright);
+  background: var(--bg-panel);
+  box-shadow:
+    var(--glow),
+    inset 0 0 60px color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.tui-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  background: var(--title-bg);
+  color: var(--title-fg);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tui-titlebar-mark {
+  color: var(--accent);
+}
+
+.tui-body {
+  padding: 22px 22px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tui-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 10px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.tui-statusbar-hint {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tui-logo {
+  margin: 0 0 16px;
+  color: var(--accent);
+  font-size: 11px;
+  line-height: 1.15;
+  text-align: center;
+  white-space: pre;
+  text-shadow: var(--glow);
+}
+
+.theme-toggle {
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+}
+
+.theme-toggle:hover {
+  color: var(--accent);
+}
+
+.tui-field {
+  margin-bottom: 18px;
+}
+
+.tui-field-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.tui-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  resize: vertical;
+  caret-color: var(--accent);
+}
+
+.tui-textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.tui-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.tui-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tui-prompt {
+  flex-shrink: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tui-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  caret-color: var(--accent);
+}
+
+.tui-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.tui-input:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.tui-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 4px 0 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.tui-check input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.tui-check:has(input:disabled) {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.tui-line {
+  margin: 0 0 18px;
+  font-size: 12px;
+  word-break: break-word;
+}
+
+.tui-line-dim {
+  color: var(--text-muted);
+  margin-right: 8px;
+}
+
+.tui-line-value {
+  color: var(--text-dim);
+}
+
+.tui-primary {
+  width: 100%;
+  padding: 14px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border: 2px solid var(--accent-dim);
+  cursor: pointer;
+  transition:
+    filter 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.tui-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: var(--glow);
+}
+
+.tui-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tui-msg {
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tui-msg-error {
+  color: var(--error);
+}
+
+.tui-msg-error::before {
+  content: 'err> ';
+  font-weight: 700;
+}
+
+.tui-msg-ok {
+  color: var(--accent);
+}
+
+.tui-msg-ok::before {
+  content: 'ok> ';
+  font-weight: 700;
+}
+
+.tui-tabs {
+  display: flex;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+
+.tui-tab {
+  flex: 1;
+  padding: 8px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.tui-tab[aria-selected='true'] {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  font-weight: 700;
+}
+
+.tui-seg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tui-seg-btn {
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.tui-seg-btn[aria-pressed='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.tui-reveal {
+  flex-shrink: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.tui-reveal:hover {
+  color: var(--accent);
+}
+
+.tui-words {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 10px;
+  margin-bottom: 16px;
+}
+
+.tui-word {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tui-word:focus-within {
+  border-bottom-color: var(--accent);
+}
+
+.tui-word-num {
+  width: 1.4em;
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.tui-word-input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  caret-color: var(--accent);
+}
+
+.tui-word-input:focus {
+  outline: none;
+}
+
+.tui-word-input:read-only {
+  color: var(--text-dim);
+}
+
+.tui-ghost {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 14px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: transparent;
+  border: 1px dashed var(--border-bright);
+  cursor: pointer;
+}
+
+.tui-ghost:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.tui-ghost:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tui-warn {
+  margin: 0 0 14px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.tui-warn::before {
+  content: '!! ';
+  color: var(--error);
+  font-weight: 700;
+}
+
+.tui-sign-request {
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 2px solid var(--accent-dim);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.tui-lead-left {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.tui-dashboard-panel {
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--border);
+}
+
+.tui-dashboard-panel-accent {
+  border-color: var(--border-bright);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.tui-section-first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.tui-page-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.tui-lead {
+  margin: 0 0 22px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.tui-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tui-back {
+  margin: 0 0 14px;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+}
+
+.tui-back:hover {
+  color: var(--accent);
+}
+
+.tui-manage-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tui-connection-card {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-bright);
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+}
+
+.tui-msg-info {
+  color: var(--text-dim);
+}
+
+.tui-msg-info::before {
+  content: 'i> ';
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.tui-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+}
+
+.tui-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tui-backups {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+
+.tui-backups li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tui-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, var(--accent-contrast) 35%, transparent);
+  border-top-color: var(--accent-contrast);
+  border-radius: 50%;
+  animation: tui-spin 0.75s linear infinite;
+}
+
+@keyframes tui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tui-spinner {
+    animation: none;
+  }
+}

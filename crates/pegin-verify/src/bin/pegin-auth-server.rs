@@ -12,13 +12,15 @@
 #![allow(clippy::expect_used)]
 
 use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::extract::State;
 use axum::http::{header, HeaderMap, StatusCode};
 use axum::response::IntoResponse;
-use axum::routing::post;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -31,6 +33,24 @@ use pegin_verify::{
 
 const SESSION_COOKIE: &str = "pegin_session";
 const NONCE_TTL_SECS: u64 = 300;
+const REQUEST_TTL_SECS: u64 = 600;
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SignRequestRecord {
+    request_id: String,
+    kind: String,
+    origin: String,
+    summary: String,
+    spend_bundle_b64: Option<String>,
+    message: Option<String>,
+    return_url: Option<String>,
+    status: String,
+    signed_bundle_b64: Option<String>,
+    message_sig_hex: Option<String>,
+    tx_submitted: bool,
+    expires_at: u64,
+}
 
 struct Pending {
     nonce: String,
@@ -46,9 +66,17 @@ struct Session {
 struct AppState {
     pending: Mutex<HashMap<String, Pending>>,
     sessions: Mutex<HashMap<String, Session>>,
+    requests: Mutex<HashMap<String, SignRequestRecord>>,
+    passkey_blobs: Mutex<HashMap<String, PasskeyBlobRecord>>,
     coinset: CoinsetClient,
     resolver: CoinsetResolver,
     session_ttl: u64,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct PasskeyBlobRecord {
+    iv: String,
+    ct: String,
 }
 
 #[derive(Serialize)]
@@ -99,9 +127,12 @@ async fn main() {
 
     let coinset = CoinsetClient::new(coinset_url);
     let resolver = CoinsetResolver::new(coinset.clone()).with_scan_limit(scan_limit);
+    let passkey_blobs = load_passkey_blobs(&passkey_blob_store_path());
     let state = Arc::new(AppState {
         pending: Mutex::new(HashMap::new()),
         sessions: Mutex::new(HashMap::new()),
+        requests: Mutex::new(HashMap::new()),
+        passkey_blobs: Mutex::new(passkey_blobs),
         coinset,
         resolver,
         session_ttl,
@@ -112,6 +143,15 @@ async fn main() {
         .route("/resolve", post(handle_resolve))
         .route("/session", post(handle_session).get(handle_get_session))
         .route("/logout", post(handle_logout))
+        .route("/request/start", post(handle_request_start))
+        .route("/request/poll", get(handle_request_poll))
+        .route("/request/:request_id", get(handle_request_get))
+        .route("/request/complete", post(handle_request_complete))
+        .route("/request/reject", post(handle_request_reject))
+        .route(
+            "/passkey-blob",
+            post(handle_passkey_blob_put).get(handle_passkey_blob_get),
+        )
         .with_state(state);
 
     let addr = format!("127.0.0.1:{port}");
@@ -263,6 +303,224 @@ async fn handle_logout(
         .into_response()
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestStartBody {
+    kind: String,
+    summary: String,
+    spend_bundle_b64: Option<String>,
+    message: Option<String>,
+    return_url: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestStartResponse {
+    request_id: String,
+    deep_link: String,
+    relay_url: String,
+}
+
+async fn handle_request_start(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(body): Json<RequestStartBody>,
+) -> impl IntoResponse {
+    purge_expired(&state);
+    let request_id = random_hex(16);
+    let origin = audience(&headers);
+    let relay_url = format!(
+        "http://127.0.0.1:{port}",
+        port = env_parse("PEGIN_AUTH_PORT", 8787)
+    );
+    let record = SignRequestRecord {
+        request_id: request_id.clone(),
+        kind: body.kind,
+        origin,
+        summary: body.summary,
+        spend_bundle_b64: body.spend_bundle_b64,
+        message: body.message,
+        return_url: body.return_url,
+        status: "pending".to_owned(),
+        signed_bundle_b64: None,
+        message_sig_hex: None,
+        tx_submitted: false,
+        expires_at: now_secs() + REQUEST_TTL_SECS,
+    };
+    state
+        .requests
+        .lock()
+        .expect("lock")
+        .insert(request_id.clone(), record);
+    let deep_link = format!(
+        "pegin-signer://sign?requestId={request_id}&relay={}",
+        urlencoding::encode(&relay_url)
+    );
+    Json(RequestStartResponse {
+        request_id,
+        deep_link,
+        relay_url,
+    })
+    .into_response()
+}
+
+async fn handle_request_get(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Path(request_id): axum::extract::Path<String>,
+) -> impl IntoResponse {
+    purge_expired(&state);
+    let guard = state.requests.lock().expect("lock");
+    match guard.get(&request_id) {
+        Some(record) if record.expires_at >= now_secs() => {
+            Json(json!({ "request": public_request(record) })).into_response()
+        }
+        _ => error(StatusCode::NOT_FOUND, "request not found or expired"),
+    }
+}
+
+async fn handle_request_poll(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Query(query): axum::extract::Query<HashMap<String, String>>,
+) -> impl IntoResponse {
+    purge_expired(&state);
+    let Some(request_id) = query.get("requestId") else {
+        return error(StatusCode::BAD_REQUEST, "requestId required");
+    };
+    let guard = state.requests.lock().expect("lock");
+    let Some(record) = guard.get(request_id) else {
+        return error(StatusCode::NOT_FOUND, "request not found");
+    };
+    if record.expires_at < now_secs() {
+        return Json(json!({ "status": "expired" })).into_response();
+    }
+    Json(json!({
+        "status": record.status,
+        "txSubmitted": record.tx_submitted,
+        "messageSigHex": record.message_sig_hex,
+        "signedBundleB64": record.signed_bundle_b64,
+    }))
+    .into_response()
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestCompleteBody {
+    request_id: String,
+    signed_bundle_b64: Option<String>,
+    message_sig_hex: Option<String>,
+    tx_submitted: bool,
+}
+
+async fn handle_request_complete(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<RequestCompleteBody>,
+) -> impl IntoResponse {
+    purge_expired(&state);
+    let mut guard = state.requests.lock().expect("lock");
+    let Some(record) = guard.get_mut(&body.request_id) else {
+        return error(StatusCode::NOT_FOUND, "request not found");
+    };
+    if record.expires_at < now_secs() {
+        return error(StatusCode::GONE, "request expired");
+    }
+    "completed".clone_into(&mut record.status);
+    record.signed_bundle_b64 = body.signed_bundle_b64;
+    record.message_sig_hex = body.message_sig_hex;
+    record.tx_submitted = body.tx_submitted;
+    StatusCode::NO_CONTENT.into_response()
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestRejectBody {
+    request_id: String,
+}
+
+async fn handle_request_reject(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<RequestRejectBody>,
+) -> impl IntoResponse {
+    purge_expired(&state);
+    let mut guard = state.requests.lock().expect("lock");
+    let Some(record) = guard.get_mut(&body.request_id) else {
+        return error(StatusCode::NOT_FOUND, "request not found");
+    };
+    "rejected".clone_into(&mut record.status);
+    StatusCode::NO_CONTENT.into_response()
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PasskeyBlobPutBody {
+    credential_id: String,
+    iv: String,
+    ct: String,
+}
+
+#[derive(Serialize)]
+struct PasskeyBlobResponse {
+    iv: String,
+    ct: String,
+}
+
+#[derive(Deserialize)]
+struct PasskeyBlobGetQuery {
+    #[serde(rename = "credentialId")]
+    credential_id: String,
+}
+
+/// Stores PRF-encrypted seed ciphertext from PEGIN Signer for browser login (feat-81 dev sync).
+async fn handle_passkey_blob_put(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<PasskeyBlobPutBody>,
+) -> impl IntoResponse {
+    if body.credential_id.is_empty() || body.iv.is_empty() || body.ct.is_empty() {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "credentialId, iv, and ct are required",
+        );
+    }
+    state.passkey_blobs.lock().expect("lock").insert(
+        body.credential_id.clone(),
+        PasskeyBlobRecord {
+            iv: body.iv.clone(),
+            ct: body.ct.clone(),
+        },
+    );
+    if let Err(err) = save_passkey_blobs(&state.passkey_blobs) {
+        eprintln!("pegin-auth-server: passkey blob persist failed: {err}");
+    }
+    StatusCode::NO_CONTENT.into_response()
+}
+
+async fn handle_passkey_blob_get(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Query(query): axum::extract::Query<PasskeyBlobGetQuery>,
+) -> impl IntoResponse {
+    let blobs = state.passkey_blobs.lock().expect("lock");
+    let Some(blob) = blobs.get(&query.credential_id) else {
+        return error(StatusCode::NOT_FOUND, "passkey blob not found");
+    };
+    Json(PasskeyBlobResponse {
+        iv: blob.iv.clone(),
+        ct: blob.ct.clone(),
+    })
+    .into_response()
+}
+
+fn public_request(record: &SignRequestRecord) -> serde_json::Value {
+    json!({
+        "requestId": record.request_id,
+        "kind": record.kind,
+        "origin": record.origin,
+        "summary": record.summary,
+        "spendBundleB64": record.spend_bundle_b64,
+        "message": record.message,
+        "returnUrl": record.return_url,
+        "status": record.status,
+    })
+}
+
 fn error(status: StatusCode, message: &str) -> axum::response::Response {
     (status, Json(json!({ "error": message }))).into_response()
 }
@@ -321,6 +579,11 @@ fn purge_expired(state: &AppState) {
         .lock()
         .expect("lock")
         .retain(|_, s| s.expires_at >= now);
+    state
+        .requests
+        .lock()
+        .expect("lock")
+        .retain(|_, r| r.expires_at >= now);
 }
 
 fn env_parse<T: std::str::FromStr>(key: &str, default: T) -> T {
@@ -341,4 +604,40 @@ fn random_hex(bytes: usize) -> String {
     let mut buf = vec![0u8; bytes];
     getrandom::getrandom(&mut buf).expect("system RNG");
     hex::encode(buf)
+}
+
+fn passkey_blob_store_path() -> PathBuf {
+    std::env::var("PEGIN_AUTH_DATA")
+        .map_or_else(|_| PathBuf::from(".pegin-auth-data"), PathBuf::from)
+        .join("passkey-blobs.json")
+}
+
+fn load_passkey_blobs(path: &Path) -> HashMap<String, PasskeyBlobRecord> {
+    match fs::read(path) {
+        Ok(bytes) => serde_json::from_slice(&bytes).unwrap_or_else(|err| {
+            eprintln!(
+                "pegin-auth-server: ignoring corrupt passkey store ({}): {err}",
+                path.display()
+            );
+            HashMap::new()
+        }),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => HashMap::new(),
+        Err(err) => {
+            eprintln!(
+                "pegin-auth-server: passkey store read failed ({}): {err}",
+                path.display()
+            );
+            HashMap::new()
+        }
+    }
+}
+
+fn save_passkey_blobs(blobs: &Mutex<HashMap<String, PasskeyBlobRecord>>) -> Result<(), String> {
+    let path = passkey_blob_store_path();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let snapshot = blobs.lock().expect("lock").clone();
+    let json = serde_json::to_vec_pretty(&snapshot).map_err(|e| e.to_string())?;
+    fs::write(&path, json).map_err(|e| e.to_string())
 }
