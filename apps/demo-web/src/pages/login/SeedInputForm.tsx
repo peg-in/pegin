@@ -57,7 +57,8 @@ export function SeedInputForm({
             setSeedPhrase(event.target.value)
           }}
           placeholder="········"
-          autoComplete="off"
+          // current-password lets 1Password / browser managers offer to fill (and save) the seed.
+          autoComplete="current-password"
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
